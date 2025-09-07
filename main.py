@@ -1,13 +1,33 @@
 import random
 
-claves = [["APLICACION", "USUARIO", "CLAVE"]]
+#USUARIO MAESTRO
+user_admin="admin"
+password_admin="1234"
+
+
+claves = []
+
+def login():
+    print("----LOGIN----")
+
+    while True:
+        user=input("Usuario: ")
+        password=input("Contraseña: ")
+        
+        if user== user_admin and password == password_admin:
+            print(f"\nBienvenido! {user_admin}")
+            return True
+        else:
+            print("Usuario o contraseña equivocada. Volver a ingresar datos\n")
+            
+    
 
 def menu():
     print("\n\nElija una de las siguientes opciones")
     for i in range (5):
         if i == 0:
             opcion = "Salir"
-        elif i == 1
+        elif i == 1:
             opcion = "Agregar"
         elif i == 2:
             opcion = "Editar"
@@ -71,23 +91,43 @@ def eliminar():
     else:
         claves.pop(posicion)
 
-while True:
-    menu()
-    accion = int(input("Ingrese el número de la tarea que desea realizar: "))
+def mostrar():
+    if len(claves)==0:
+        print("\nNo hay cuentas guardadas aún. Vuelve al menu")
+        return
     
-    while accion < 0 or accion > 5:
-        print("Nummero ingresado invalido, ingrese nuevamente: ")
-        accion = int(input())
-    if accion == 1:
-        nueva_cuenta() 
-    elif accion == 2:
-        editar()
-    elif accion == 3:
-        eliminar()
-    elif accion == 4:
-        for i in range(len(claves)):
-            print(claves[i])
+    contraseña_admin= input("Ingrese la contraseña del usuario administrador para poder visualizar sus contraseñas guardadas: ")
+
+    if contraseña_admin==password_admin:
+        print("\nEstas son tus cuentas guardadas")
+        for app, usuario, clave in claves:
+            print(f"App:{app}| Usuario: {usuario} | Contraseña: {clave}")
     else:
-        break
+        print("Contraseña incorrecta. Acceso denegado")
+        
+
+
+if login():
+    while True:
+        menu()        
+        # while accion < 0 or accion > 5:
+        try:
+            accion = int(input("Ingrese el número de la tarea que desea realizar: "))
+        except ValueError:
+            print("Numero ingresado invalido, ingrese nuevamente: ")
+            continue
+            # accion = int(input())
+        if accion == 1:
+            nueva_cuenta() 
+        elif accion == 2:
+            editar()
+        elif accion == 3:
+            eliminar()
+        elif accion == 4:
+            mostrar()
+            """for i in range(len(claves)):
+                print(claves[i])"""
+        else:
+            print("Opción invalida")
     
     
