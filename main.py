@@ -5,10 +5,15 @@ user_admin="admin"
 password_admin="1234"
 
 
+#DATOS PRE-SETEADOS
 claves = []
+letras_mayusculas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ']
+letras_minusculas = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ']
+numeros = ['0','1','2','3','4','5','6','7','8','9']
+caracteres_especiales = ['?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','\\','"',"'",'+','*','=','<','>','|','^','°','~','`']
 
 def login():
-    print("----LOGIN----")
+    print("-----LOGIN-----")
 
     while True:
         user=input("Usuario: ")
@@ -40,9 +45,85 @@ def menu():
     print("\n")
     
 
-def ingresar_contraseña(posicion = -1):
-    contraseña = input("Ingrese la contraseña que quiere para esta app: ")
-    claves[-1].append(contraseña)
+def crear_contraseña():
+    largo_contraseña = 20
+    while True:
+        contraseña=[]
+        for i in range(largo_contraseña):
+            buscar_lista = random.randint(0,3)
+            if buscar_lista == 0:
+                caracter = letras_mayusculas[random.randint(0,len(letras_mayusculas)-1)]
+            elif buscar_lista == 1:
+                caracter = letras_minusculas[random.randint(0,len(letras_minusculas)-1)]
+            elif buscar_lista == 2:
+                caracter = numeros[random.randint(0,len(numeros)-1)]
+            else:
+                caracter = caracteres_especiales[random.randint(0,len(caracteres_especiales)-1)]
+            contraseña.append(caracter)
+        contraseña = "".join(contraseña)
+        if validar(contraseña) == True:
+            break
+    return contraseña
+
+#VALIDACIONES: 12 CARACTERES, 1 NUMERO, 1 CARACTER ESPECIAL, 1 MINUSCULA Y 1 MAYUSCULA
+def validar(contraseña):
+    largo_min = 12
+    numero = False
+    caracter_esp = False
+    letra_min = False
+    letra_may = False
+    largo_aceptado = False
+    contraseña_aceptada = False
+    
+    if len(contraseña) >= largo_min:
+        largo_aceptado = True
+    for caracter in contraseña:
+        if caracter in numeros:
+            numero = True
+        if caracter in caracteres_especiales:
+            caracter_esp = True
+        if caracter in letras_mayusculas:
+            letra_may = True
+        if caracter in letras_minusculas:
+            letra_min = True
+        
+    if largo_aceptado == True and numero == True and caracter_esp == True and letra_min == True and letra_may == True:
+        contraseña_aceptada = True
+        
+    return contraseña_aceptada
+            
+
+
+def ingresar_contraseña(fila = -1):
+    while True:
+        while True:
+            try:
+                eleccion = int(input("Ingrese '1' si quiere ingresar usted mismo la contraseña o '2' si quiere que se cree otra al azar: "))
+                if  eleccion != 1 and eleccion != 2:
+                    print("Debe ingresar una de las opciones mencionadas.")
+                else:
+                    break
+            except ValueError:
+                print("Debe ingresar un numero.")
+            
+            
+        if eleccion == 1:
+            contraseña = input("Ingrese la contraseña que quiere para esta app: ")
+            if validar(contraseña) == True:
+                if fila == -1:
+                    claves[-1].append(contraseña)
+                else:
+                    claves[fila][2] = contraseña
+                break
+            else:
+                print("Contraseña no valida.")
+        else:
+            contraseña = crear_contraseña()
+            if fila == -1:
+                claves[-1].append(contraseña)
+            else:
+                claves[fila][2] = contraseña
+            break
 
 
 def ingresar_usuario(posicion = -1):
@@ -60,8 +141,8 @@ def nueva_cuenta():
     ingresar_contraseña()
     
 def editar():
-    posicion = buscar()
-    if posicion == -1:
+    fila = buscar()
+    if fila == -1:
         print("La cuenta que desea editar no existe.")
     else:
         print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
@@ -70,9 +151,9 @@ def editar():
             print("Ingreso invalido. Responda nuevamente.")
             respuesta = int(input("Respuesta: "))
         if respuesta == 1:
-            claves[posicion][1] = input("Ingrese el nuevo nombre de usuario: ")
+            ingresar_usuario(fila)
         else:
-            claves[posicion][2] = input("Ingrese la nueva contraseña: ")
+            ingresar_contraseña(fila)            
     
     
 def buscar():
@@ -81,15 +162,16 @@ def buscar():
     for i in range(len(claves)):
         if cuenta_a_buscar == claves[i][0].lower():
             encontrado = True
-            posicion = i
-    return posicion if encontrado == True else -1
+            fila = i
+    return fila if encontrado == True else -1
     
 def eliminar():
-    posicion = buscar()
-    if posicion == -1:
-        print("La cuenta que desea editar no existe.")
+    fila = buscar()
+    if fila == -1:
+        print("La cuenta que desea eliminar no existe.")
     else:
-        claves.pop(posicion)
+        claves.pop(fila)
+        print("La cuenta fue eliminada.")
 
 def mostrar():
     if len(claves)==0:
@@ -110,13 +192,13 @@ def mostrar():
 if login():
     while True:
         menu()        
-        # while accion < 0 or accion > 5:
+        """while accion < 0 or accion > 5"""
         try:
             accion = int(input("Ingrese el número de la tarea que desea realizar: "))
         except ValueError:
             print("Numero ingresado invalido, ingrese nuevamente: ")
             continue
-            # accion = int(input())
+            """accion = int(input())"""
         if accion == 1:
             nueva_cuenta() 
         elif accion == 2:
