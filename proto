@@ -1,0 +1,210 @@
+import random
+
+#USUARIO MAESTRO
+user_admin="admin"
+password_admin="1234"
+
+
+
+claves = []
+letras_mayusculas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ']
+letras_minusculas = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ']
+numeros = ['0','1','2','3','4','5','6','7','8','9']
+caracteres_especiales = ['?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','\\','"',"'",'+','*','=','<','>','|','^','°','~','`']
+
+def login():
+    print("-----LOGIN-----")
+
+    while True:
+        user=input("Usuario: ")
+        password=input("Contraseña: ")
+        
+        if user== user_admin and password == password_admin:
+            print(f"\nBienvenido! {user_admin}")
+            return True
+        else:
+            print("Usuario o contraseña equivocada. Volver a ingresar datos\n")
+            
+    
+
+def menu():
+    print("\n\nElija una de las siguientes opciones")
+    for i in range (5):
+        if i == 0:
+            opcion = "Salir"
+        elif i == 1:
+            opcion = "Agregar"
+        elif i == 2:
+            opcion = "Editar"
+        elif i == 3:
+            opcion = "Eliminar"
+        else:
+            opcion = "Mostrar"
+        print("-------------")
+        print(i,"-", opcion)
+    print("\n")
+    
+
+def crear_contraseña():
+    largo_contraseña = 20
+    while True:
+        contraseña=[]
+        for i in range(largo_contraseña):
+            buscar_lista = random.randint(0,3)
+            if buscar_lista == 0:
+                caracter = letras_mayusculas[random.randint(0,len(letras_mayusculas)-1)]
+            elif buscar_lista == 1:
+                caracter = letras_minusculas[random.randint(0,len(letras_minusculas)-1)]
+            elif buscar_lista == 2:
+                caracter = numeros[random.randint(0,len(numeros)-1)]
+            else:
+                caracter = caracteres_especiales[random.randint(0,len(caracteres_especiales)-1)]
+            contraseña.append(caracter)
+        contraseña = "".join(contraseña)
+        if validar(contraseña) == True:
+            break
+    return contraseña
+
+def validar(contraseña):
+    largo_min = 12
+    numero = False
+    caracter_esp = False
+    letra_min = False
+    letra_may = False
+    largo_aceptado = False
+    contraseña_aceptada = False
+    
+    if len(contraseña) >= largo_min:
+        largo_aceptado = True
+    for caracter in contraseña:
+        if caracter in numeros:
+            numero = True
+        if caracter in caracteres_especiales:
+            caracter_esp = True
+        if caracter in letras_mayusculas:
+            letra_may = True
+        if caracter in letras_minusculas:
+            letra_min = True
+        
+    if largo_aceptado == True and numero == True and caracter_esp == True and letra_min == True and letra_may == True:
+        contraseña_aceptada = True
+        
+    return contraseña_aceptada
+            
+
+
+def ingresar_contraseña(posicion = -1):
+    while True:
+        while True:
+            try:
+                eleccion = int(input("Ingrese '1' si quiere ingresar ustede mismo la contraseña o '2' si quiere que se cree otra al azar: "))
+                if  eleccion != 1 and eleccion != 2:
+                    print("Debe ingresar una de las opciones mencionadas.")
+                else:
+                    break
+            except ValueError:
+                print("Debe ingresar un numero.")
+            
+            
+        if eleccion == 1:
+            contraseña = input("Ingrese la contraseña que quiere para esta app: ")
+            if validar(contraseña) == True:
+                claves[-1].append(contraseña)
+                break
+            else:
+                print("Contraseña no valida.")
+        else:
+            contraseña = crear_contraseña()
+            claves[-1].append(contraseña)
+            break
+
+
+def ingresar_usuario(posicion = -1):
+    usuario = input("Ingrese el nombre de su usuario en la app: ")
+    claves[-1].append(usuario)
+
+def ingresar_aplicacion(posicion = -1):
+    claves.append([])
+    aplicacion = input("Ingrese el nombre de la nueva app: ")
+    claves[posicion].append(aplicacion)
+    
+def nueva_cuenta():
+    ingresar_aplicacion()
+    ingresar_usuario()
+    ingresar_contraseña()
+    
+def editar():
+    fila = buscar()
+    if fila == -1:
+        print("La cuenta que desea editar no existe.")
+    else:
+        print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
+        respuesta = int(input("Respuesta: "))
+        while respuesta != 1 and respuesta != 2:
+            print("Ingreso invalido. Responda nuevamente.")
+            respuesta = int(input("Respuesta: "))
+        if respuesta == 1:
+            ingresar_usuario(fila)
+        else:
+            ingresar_contraseña(fila)
+            claves[fila][2] = input("Ingrese la nueva contraseña: ")
+            
+    
+    
+def buscar():
+    cuenta_a_buscar = input("Ingrese el nombre de la app que desea buscar: ").lower()
+    encontrado = False
+    for i in range(len(claves)):
+        if cuenta_a_buscar == claves[i][0].lower():
+            encontrado = True
+            fila = i
+    return fila if encontrado == True else -1
+    
+def eliminar():
+    fila = buscar()
+    if fila == -1:
+        print("La cuenta que desea eliminar no existe.")
+    else:
+        claves.pop(fila)
+        print("La cuenta fue eliminada.")
+
+def mostrar():
+    if len(claves)==0:
+        print("\nNo hay cuentas guardadas aún. Vuelve al menu")
+        return
+    
+    contraseña_admin= input("Ingrese la contraseña del usuario administrador para poder visualizar sus contraseñas guardadas: ")
+
+    if contraseña_admin==password_admin:
+        print("\nEstas son tus cuentas guardadas")
+        for app, usuario, clave in claves:
+            print(f"App:{app}| Usuario: {usuario} | Contraseña: {clave}")
+    else:
+        print("Contraseña incorrecta. Acceso denegado")
+        
+
+
+if login():
+    while True:
+        menu()        
+        # while accion < 0 or accion > 5:
+        try:
+            accion = int(input("Ingrese el número de la tarea que desea realizar: "))
+        except ValueError:
+            print("Numero ingresado invalido, ingrese nuevamente: ")
+            continue
+            # accion = int(input())
+        if accion == 1:
+            nueva_cuenta() 
+        elif accion == 2:
+            editar()
+        elif accion == 3:
+            eliminar()
+        elif accion == 4:
+            mostrar()
+            """for i in range(len(claves)):
+                print(claves[i])"""
+        else:
+            print("Opción invalida")
+    
+    
