@@ -1,6 +1,6 @@
 import funciones
 
-if __name__ == "__main__":
+def main():
     if funciones.login():
         while True:
             funciones.menu()        
@@ -24,5 +24,6 @@ if __name__ == "__main__":
                 break
             else:
                 print("Opción invalida")
-    
-    
+        
+if __name__ == "__main__": 
+    main()

@@ -1,4 +1,5 @@
 BIENVENIDO A ~PASSLOGIC~
+by 
 
 Este proyecto es un gestor de contraseñas simple en consola escrito en Python.
 Permite crear, almacenar, editar y eliminar contraseñas de manera segura, además de generar contraseñas aleatorias robustas con criterios de seguridad.
@@ -31,26 +32,6 @@ Características:
     Al menos 1 letra mayúscula.
 
 -Protección extra: se requiere la clave del administrador para visualizar las contraseñas guardadas.
-
-
-Estructura del Código:
-
-login(): Ingreso al sistema como administrador.
-
-menu(): Menú principal con opciones.
-
-crear_contraseña(): Genera una contraseña aleatoria segura.
-
-validar(): Verifica que una contraseña cumpla con los criterios de seguridad.
-
-nueva_cuenta(): Permite registrar una nueva aplicación, usuario y contraseña.
-
-editar(): Modifica usuario o contraseña de una app registrada.
-
-eliminar(): Elimina una cuenta.
-
-mostrar(): Muestra todas las cuentas guardadas (solo con validación de admin).
-
 
 Para la ejecución:
 Ingresa con el usuario maestro:

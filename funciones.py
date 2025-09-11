@@ -12,10 +12,11 @@ letras_minusculas = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o'
 numeros = ['0','1','2','3','4','5','6','7','8','9']
 caracteres_especiales = ['?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','\\','"',"'",'+','*','=','<','>','|','^','°','~','`']
 
-def login():
-    print("-----LOGIN-----")
 
+def login():
     """Solicitamos al usuario ingresar usuario y contraseña del administrador"""
+
+    print("-----LOGIN-----")
 
     while True:
         user=input("Usuario: ")
@@ -129,6 +130,7 @@ def ingresar_contraseña(fila = -1):
 
 
 def ingresar_usuario(fila = -1):
+    """Permite al usuario ingresar su nombre de usuario"""
     usuario = input("Ingrese el nombre de su usuario en la app: ")
     if fila == -1:
         claves[fila].append(usuario)
@@ -153,6 +155,7 @@ def nueva_cuenta():
     ingresar_contraseña()
     
 def editar():
+    """Editamos el usuario o contraseña ya guardados"""
     fila = buscar()
     if fila == -1:
         print("La cuenta que desea editar no existe.")
@@ -169,6 +172,7 @@ def editar():
     
     
 def buscar():
+    "Busca la aplicación tanto en mayuscula como minuscula"
     cuenta_a_buscar = input("Ingrese el nombre de la app que desea buscar: ").lower()
     encontrado = False
     for i in range(len(claves)):
@@ -178,6 +182,7 @@ def buscar():
     return fila if encontrado == True else -1
     
 def eliminar():
+    "Eliminamos la cuenta buscada"
     fila = buscar()
     if fila == -1:
         print("La cuenta que desea eliminar no existe.")
@@ -189,6 +194,7 @@ def eliminar():
 ocultar = lambda c: c[:1] + "*" * (len(c) - 1)   
 
 def mostrar():
+    """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
     if len(claves)==0:
         print("\nNo hay cuentas guardadas aún. Vuelve al menu")
         return
@@ -200,7 +206,6 @@ def mostrar():
     seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
 
     if seguir==password_admin:
-        #contraseña_admin= input("Ingrese la contraseña del usuario administrador para poder visualizar sus contraseñas guardadas: ")
         for app, usuario, cont in claves:
             print(f"App:{app}| Usuario: {usuario} | Contraseña: {cont}")
     else:
