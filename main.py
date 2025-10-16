@@ -1,4 +1,12 @@
 import funciones
+import os
+import platform
+
+def limpiar_pantalla():
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear")
 
 def main():
     if funciones.login():
@@ -12,14 +20,19 @@ def main():
                 continue
 
             if accion == 1:
-                funciones.nueva_cuenta() 
+                limpiar_pantalla()
+                funciones.nueva_cuenta()
             elif accion == 2:
+                limpiar_pantalla()
                 funciones.editar()
             elif accion == 3:
+                limpiar_pantalla()
                 funciones.eliminar()
             elif accion == 4:
+                limpiar_pantalla()
                 funciones.mostrar()
-            elif accion == 0: 
+            elif accion == 0:
+                limpiar_pantalla()
                 print("\nSALISTE DEL SISTEMA\n")
                 break
             else:

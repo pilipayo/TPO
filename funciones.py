@@ -7,12 +7,12 @@ password_admin="1234"
 
 #DATOS PRE-SETEADOS
 claves = []
-letras_mayusculas = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ']
-letras_minusculas = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ']
-numeros = ['0','1','2','3','4','5','6','7','8','9']
-caracteres_especiales = ['?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','\\','"',"'",'+','*','=','<','>','|','^','°','~','`']
+letras_mayusculas = ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ')
+letras_minusculas = ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ')
+numeros = ('0','1','2','3','4','5','6','7','8','9')
+caracteres_especiales = ('?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','"',"'",'+','*','=','<','>','|','^','°','~','`')
 
-
+    
 def login():
     """Solicitamos al usuario ingresar usuario y contraseña del administrador"""
 
@@ -31,7 +31,7 @@ def login():
     
 
 def menu():
-    """Muestra el Menu con las 4 opciones posibles: Salir, Agregar, Editar, Eliminar y Mostrar"""
+    """Muestra el Menu con las 5 opciones posibles: Salir, Agregar, Editar, Eliminar y Mostrar"""
 
     print("\n\nElija una de las siguientes opciones")
     for i in range (5):
@@ -50,11 +50,10 @@ def menu():
     print("\n")
     
 
-def crear_contraseña():
+def crear_contraseña(largo_contraseña = 20):
     """Generamos una contraseña aleatoria de 20 caracteres que cumpla con: al menos una letra mayúscula, al menos una letra minúscula, 
     al menos un número, y al menos un carácter especial"""
 
-    largo_contraseña = 20
     while True:
         contraseña=[]
         for i in range(largo_contraseña):
@@ -74,8 +73,10 @@ def crear_contraseña():
     return contraseña
 
 #VALIDACIONES: 12 CARACTERES, 1 NUMERO, 1 CARACTER ESPECIAL, 1 MINUSCULA Y 1 MAYUSCULA
-def validar(contraseña,largo_min = 12,numero = False,caracter_esp = False,letra_min = False,letra_may = False,largo_aceptado = False,contraseña_aceptada = False):
-    """Validamos que se cumplan todas las condiciones y devuelve True o False dependiendo si la contraseña es válida o no"""
+def validar(contraseña,largo_min = 12,numero = False,caracter_esp = False,letra_min = False,
+            letra_may = False,largo_aceptado = False,contraseña_aceptada = False):
+    """Validamos que se cumplan todas las condiciones.
+        Devuelve True o False dependiendo si la contraseña es válida o no"""
 
     if len(contraseña) >= largo_min:
         largo_aceptado = True
@@ -108,24 +109,34 @@ def ingresar_contraseña(fila = -1):
                     break
             except ValueError:
                 print("Debe ingresar un numero.")
-            
+                
             
         if eleccion == 1:
+            print("Va ingresar su propia contraseña. Tenga en cuenta que la misma debe tener como mínimo:")
+            print(" 12 caracteres✅\n Una letra mayúscula✅\n Una letra minúscula✅\n Un número✅\n Un caracter especial.✅\n")
             contraseña = input("Ingrese la contraseña que quiere para esta app: ")
             if validar(contraseña) == True:
                 if fila == -1:
-                    claves[-1].append(contraseña)
+                    contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
+                    claves[-1].append(contraseña_encriptada)
+                    claves[-1].append(lista_encriptacion)
                 else:
-                    claves[fila][2] = contraseña
+                    contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
+                    claves[fila][2] = contraseña_encriptada
+                    claves[fila][3] = lista_encriptacion
                 break
             else:
                 print("Contraseña no valida.")
         else:
             contraseña = crear_contraseña()
             if fila == -1:
-                claves[-1].append(contraseña)
+                contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
+                claves[-1].append(contraseña_encriptada)
+                claves[-1].append(lista_encriptacion)
             else:
-                claves[fila][2] = contraseña
+                contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
+                claves[fila][2] = contraseña_encriptada
+                claves[fila][3] = lista_encriptacion
             break
 
 
@@ -189,9 +200,7 @@ def eliminar():
     else:
         claves.pop(fila)
         print("La cuenta fue eliminada.")
-
-"""Oculatamos la contraseña con *"""
-ocultar = lambda c: c[:1] + "*" * (len(c) - 1)   
+  
 
 def mostrar():
     """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
@@ -200,15 +209,99 @@ def mostrar():
         return
     else:
         print("\nEstas son tus cuentas guardadas")
-        for app, usuario, cont in claves:
-            print(f"App:{app}| Usuario: {usuario} | Contraseña: {ocultar(cont)}")
+        for app, usuario, cont, lista in claves:
+            print(f"App:{app}| Usuario: {usuario} | Contraseña: {cont}")
     
     seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
 
     if seguir==password_admin:
-        for app, usuario, cont in claves:
-            print(f"App:{app}| Usuario: {usuario} | Contraseña: {cont}")
+        for app, usuario, cont, lista in claves:
+            print(f"App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(cont, lista)}")
     else:
         print("Contraseña incorrecta. Acceso denegado")
     
-
+def encriptar(clave_original, fila):
+    largo_clave_original= len(clave_original)
+    clave_encriptada = crear_contraseña(largo_clave_original)
+    
+    lista_encriptacion = []
+    
+    for i in range(0,largo_clave_original):
+        caracter = clave_original[i]
+        for j in range(0,4):
+            if caracter in letras_mayusculas:
+                tupla_original = 0
+                posicion_original = letras_mayusculas.index(caracter)
+            elif caracter in letras_minusculas:
+                tupla_original = 1
+                posicion_original = letras_minusculas.index(caracter)
+            elif caracter in numeros:
+                tupla_original = 2
+                posicion_original = numeros.index(caracter)
+            else: 
+                tupla_original = 3
+                posicion_original = caracteres_especiales.index(caracter)
+                
+                
+        caracter = clave_encriptada[i]
+        for j in range(0,4):
+            if caracter in letras_mayusculas:
+                tupla_encriptada = 0
+                posicion_encriptada = letras_mayusculas.index(caracter)
+            elif caracter in letras_minusculas:
+                tupla_encriptada = 1
+                posicion_encriptada = letras_minusculas.index(caracter)
+            elif caracter in numeros:
+                tupla_encriptada = 2
+                posicion_encriptada = numeros.index(caracter)
+            else: 
+                tupla_encriptada = 3
+                posicion_encriptada = caracteres_especiales.index(caracter)
+                
+        lista_encriptacion.append(tupla_encriptada-tupla_original)
+        lista_encriptacion.append(posicion_encriptada - posicion_original)
+        cadena_encriptada = "".join(map(str, lista_encriptacion))
+    
+    return clave_encriptada,lista_encriptacion
+    
+  
+def desencriptar(clave_encriptada, lista_encriptacion):
+    largo_clave_encriptada= len(clave_encriptada)
+    clave_original = []
+    
+    for i in range(0,largo_clave_encriptada):
+        caracter = clave_encriptada[i]
+        for j in range(0,4):
+            if caracter in letras_mayusculas:
+                tupla_encriptada = 0
+                posicion_encriptada = letras_mayusculas.index(caracter)
+            elif caracter in letras_minusculas:
+                tupla_encriptada = 1
+                posicion_encriptada = letras_minusculas.index(caracter)
+            elif caracter in numeros:
+                tupla_encriptada = 2
+                posicion_encriptada = numeros.index(caracter)
+            else: 
+                tupla_encriptada = 3
+                posicion_encriptada = caracteres_especiales.index(caracter)
+                
+        if i == 0:
+            tupla_original =  tupla_encriptada - lista_encriptacion[0]
+            posicion_original = posicion_encriptada - lista_encriptacion[1]
+        else:
+            tupla_original =  tupla_encriptada - lista_encriptacion[i*2]
+            posicion_original = posicion_encriptada - lista_encriptacion[i*2+1]
+            
+        if tupla_original == 0:
+            caracter = letras_mayusculas[posicion_original]
+        elif  tupla_original == 1:
+            caracter = letras_minusculas[posicion_original]
+        elif  tupla_original == 2:
+            caracter = numeros[posicion_original]
+        else: 
+            caracter = caracteres_especiales[posicion_original]
+                
+        
+        clave_original.append(caracter)
+    clave_original = "".join(clave_original)
+    return clave_original
