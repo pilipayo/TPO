@@ -10,7 +10,7 @@ claves = []
 letras_mayusculas = ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ')
 letras_minusculas = ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ')
 numeros = ('0','1','2','3','4','5','6','7','8','9')
-caracteres_especiales = ('?','!','¡','¿','.',',',';',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','"',"'",'+','*','=','<','>','|','^','°','~','`')
+caracteres_especiales = ('?','!','¡','¿','.',',',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','"',"'",'+','*','=','<','>','|','^','°','~','`')
 
     
 def login():
@@ -24,6 +24,13 @@ def login():
         
         if user== user_admin and password == password_admin:
             print(f"\nBienvenido! {user_admin}")
+            try:
+                archivo = open(f"{user}.csv", mode = "wt", encoding="utf-8")
+            
+            except OSError:
+                print("No se puede crear el archivo")
+            finally:
+                archivo.close()
             return True
         else:
             print("Usuario o contraseña equivocada. Volver a ingresar datos\n")
@@ -116,47 +123,104 @@ def ingresar_contraseña(fila = -1):
             print(" 12 caracteres✅\n Una letra mayúscula✅\n Una letra minúscula✅\n Un número✅\n Un caracter especial.✅\n")
             contraseña = input("Ingrese la contraseña que quiere para esta app: ")
             if validar(contraseña) == True:
+                contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
                 if fila == -1:
-                    contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
-                    claves[-1].append(contraseña_encriptada)
-                    claves[-1].append(lista_encriptacion)
+                    try:
+                        with open(f"{user}.csv", mode = "at", encoding="utf-8") as archivo:
+                            archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
+                    except OSError:
+                        print("No se pudo abrir el archivo")
                 else:
-                    contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
-                    claves[fila][2] = contraseña_encriptada
-                    claves[fila][3] = lista_encriptacion
+                    try:
+                        with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                            lineas = archivo.readlines()
+                            linea_a_editar = lineas[fila-1]
+                            linea_a_editar.strip()
+                            app, usuario, contraseña, lista = linea_a_editar.split(";")
+                            lineas.pop(fila-1)
+                        with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                            for i in lineas:
+                                archivo.write(i)
+
+                        with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                            archivo.write(app+";"+usuario+";"+contraseña_encriptada+";"+lista_encriptacion+"\n")
+                            
+                    except OSError:
+                        print("No se pudo abrir el archivo")
                 break
             else:
                 print("Contraseña no valida.")
         else:
             contraseña = crear_contraseña()
+            contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
             if fila == -1:
-                contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
-                claves[-1].append(contraseña_encriptada)
-                claves[-1].append(lista_encriptacion)
+                try:
+                    with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                        archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
+                except OSError:
+                    print("No se pudo abrir el archivo")
             else:
-                contraseña_encriptada, lista_encriptacion = encriptar(contraseña, fila)
-                claves[fila][2] = contraseña_encriptada
-                claves[fila][3] = lista_encriptacion
+                try:
+                    with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                        lineas = archivo.readlines()
+                        linea_a_editar = lineas[fila-1]
+                        linea_a_editar.strip()
+                        app, usuario, contraseña, lista = linea_a_editar.split(";")
+                        lineas.pop(fila-1)
+                    with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                        for i in lineas:
+                            archivo.write(i)
+
+                    with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                        archivo.write(app+";"+usuario+";"+contraseña_encriptada+";"+lista_encriptacion+"\n")
+                        
+                except OSError:
+                    print("No se pudo abrir el archivo")
             break
 
 
 def ingresar_usuario(fila = -1):
     """Permite al usuario ingresar su nombre de usuario"""
-    usuario = input("Ingrese el nombre de su usuario en la app: ")
     if fila == -1:
-        claves[fila].append(usuario)
-    else:
-        claves[fila][1] = usuario
+        try:
+            with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                usuario = input("Ingrese el nombre de su usuario en la app: ")
+                archivo.write(usuario+";")
+        except OSError:
+            print("No se pudo abrir el archivo")
+
+    else:  
+        try:
+            with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                lineas = archivo.readlines()
+                linea_a_editar = lineas[fila-1]
+                linea_a_editar.strip()
+                app, usuario, contraseña, lista = linea_a_editar.split(";")
+                usuario = input("Ingrese el nombre de su usuario en la app: ")
+                lineas.pop(fila-1)
+                print(lineas)
+            with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                for i in lineas:
+                    archivo.write(i)
+
+            with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                archivo.write(app+";"+usuario+";"+contraseña+";"+lista+"\n")
+                
+        except OSError:
+            print("No se pudo abrir el archivo")
+
 
 
 
 def ingresar_aplicacion(posicion = -1):
     """Permite al usuario ingresar el nombre de la aplicación"""
+    with open("claves.csv", mode = "at") as archivo:
+        aplicacion = input("Ingrese el nombre de la nueva app: ")
+        archivo.write(aplicacion+";")
 
     claves.append([])
-    aplicacion = input("Ingrese el nombre de la nueva app: ")
     claves[posicion].append(aplicacion)
-
+    
 
 
 def nueva_cuenta():
@@ -171,26 +235,64 @@ def editar():
     if fila == -1:
         print("La cuenta que desea editar no existe.")
     else:
-        print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
-        respuesta = int(input("Respuesta: "))
-        while respuesta != 1 and respuesta != 2:
-            print("Ingreso invalido. Responda nuevamente.")
+        try:
+            print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
             respuesta = int(input("Respuesta: "))
-        if respuesta == 1:
-            ingresar_usuario(fila)
-        else:
-            ingresar_contraseña(fila)            
+            while respuesta != 1 and respuesta != 2:
+                print("Ingreso invalido. Responda nuevamente.")
+                respuesta = int(input("Respuesta: "))
+
+            if respuesta == 1:
+                ingresar_usuario(fila)
+            else:
+                ingresar_contraseña(fila) 
+        except ValueError as cabeza:
+            print("sos muy gay", cabeza)       
     
     
 def buscar():
     "Busca la aplicación tanto en mayuscula como minuscula"
-    cuenta_a_buscar = input("Ingrese el nombre de la app que desea buscar: ").lower()
-    encontrado = False
-    for i in range(len(claves)):
-        if cuenta_a_buscar == claves[i][0].lower():
-            encontrado = True
-            fila = i
-    return fila if encontrado == True else -1
+    print("Estas son las cuentas disponibles:")
+    contador = 1
+    encontrado = True
+    try:
+        with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
+            for linea in archivo:
+                linea = linea.strip()
+                linea = linea.split(";")
+                if len(linea) == 4:
+                    app, usuario, contraseña, lista = linea
+                    print(f"{contador}. App:{app}| Usuario: {usuario}")
+                    contador +=1
+                else:
+                    continue
+    except OSError:
+        print("No se pudo abrir el archivo.")
+
+    while True:
+        try:
+            cuenta_a_buscar = int(input("Ingrese el numero de la app que desea editar o borrar: "))
+
+            while cuenta_a_buscar < 1:
+                cuenta_a_buscar = int(input("Ingrese un numero valido (mayor o igual a '1'): "))
+
+            with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+                cantidad_registros = sum(1 for i in archivo)
+            
+            if cuenta_a_buscar > cantidad_registros:
+                print("Numero invalido")
+                encontrado = False
+            break
+        
+        
+        except ValueError:
+            print("Debe ingresar un numero.")
+        except OSError:
+            print("Archivo no encontrado")
+    
+    return cuenta_a_buscar if encontrado == True else -1
+    
+    
     
 def eliminar():
     "Eliminamos la cuenta buscada"
@@ -198,29 +300,68 @@ def eliminar():
     if fila == -1:
         print("La cuenta que desea eliminar no existe.")
     else:
-        claves.pop(fila)
+        try:
+            with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                lineas = archivo.readlines()    
+                lineas.pop(fila-1)
+                print(lineas)
+            with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                for i in lineas:
+                    archivo.write(i)
+                
+        except OSError:
+            print("No se pudo abrir el archivo")
+
         print("La cuenta fue eliminada.")
   
 
 def mostrar():
     """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
+    contador = 1
     if len(claves)==0:
         print("\nNo hay cuentas guardadas aún. Vuelve al menu")
         return
     else:
-        print("\nEstas son tus cuentas guardadas")
-        for app, usuario, cont, lista in claves:
-            print(f"App:{app}| Usuario: {usuario} | Contraseña: {cont}")
-    
-    seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
+        print("\nEstas son tus cuentas guardadas:")
+        try:
+            with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+                for linea in archivo:
+                    linea = linea.strip()
+                    linea = linea.split(";")
+                    if len(linea) == 4:
+                        app, usuario, contraseña, lista = linea
+                        print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {contraseña}")
+                        contador +=1
+                    else:
+                        continue
+                    
+        except OSError:
+            print("No se pudo abrir el archivo.")
+        
+        seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
 
-    if seguir==password_admin:
-        for app, usuario, cont, lista in claves:
-            print(f"App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(cont, lista)}")
-    else:
-        print("Contraseña incorrecta. Acceso denegado")
+        if seguir==password_admin:
+            contador = 1
+            try:
+                with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
+                    for linea in archivo:
+                        linea = linea.strip()
+                        linea = linea.split(";")
+                        if len(linea) == 4:
+                            app, usuario, contraseña, lista = linea
+                            print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(contraseña, enlistar(lista))}")
+                            contador +=1
+                        else:
+                            continue
+            except OSError:
+                print("No se pudo abrir el archivo.")
     
-def encriptar(clave_original, fila):
+        else:
+            print("Contraseña incorrecta. Acceso denegado")
+
+
+    
+def encriptar(clave_original):
     largo_clave_original= len(clave_original)
     clave_encriptada = crear_contraseña(largo_clave_original)
     
@@ -259,10 +400,13 @@ def encriptar(clave_original, fila):
                 posicion_encriptada = caracteres_especiales.index(caracter)
                 
         lista_encriptacion.append(tupla_encriptada-tupla_original)
+        lista_encriptacion.append("|")
         lista_encriptacion.append(posicion_encriptada - posicion_original)
+        lista_encriptacion.append("|")
         cadena_encriptada = "".join(map(str, lista_encriptacion))
+
     
-    return clave_encriptada,lista_encriptacion
+    return clave_encriptada,cadena_encriptada
     
   
 def desencriptar(clave_encriptada, lista_encriptacion):
@@ -305,3 +449,10 @@ def desencriptar(clave_encriptada, lista_encriptacion):
         clave_original.append(caracter)
     clave_original = "".join(clave_original)
     return clave_original
+
+
+def enlistar(cadena):
+    lista = cadena.split("|")   
+    lista = [int(x) for x in lista if x != ""]
+
+    return lista
