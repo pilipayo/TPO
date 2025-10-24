@@ -69,76 +69,87 @@ def crear_contraseña(largo_contraseña = 20):
     """Generamos una contraseña aleatoria de 20 caracteres que cumpla con: al menos una letra mayúscula, al menos una letra minúscula, 
     al menos un número, y al menos un carácter especial"""
 
-    while True:
-        contraseña=[]
-        for i in range(largo_contraseña):
-            buscar_lista = random.randint(0,3)
-            if buscar_lista == 0:
-                caracter = letras_mayusculas[random.randint(0,len(letras_mayusculas)-1)]
-            elif buscar_lista == 1:
-                caracter = letras_minusculas[random.randint(0,len(letras_minusculas)-1)]
-            elif buscar_lista == 2:
-                caracter = numeros[random.randint(0,len(numeros)-1)]
-            else:
-                caracter = caracteres_especiales[random.randint(0,len(caracteres_especiales)-1)]
-            contraseña.append(caracter)
-        contraseña = "".join(contraseña)
-        if validar(contraseña) == True:
-            break
+    contraseña=[]
+    for i in range(largo_contraseña):
+        buscar_lista = random.randint(0,3)
+        if buscar_lista == 0:
+            caracter = letras_mayusculas[random.randint(0,len(letras_mayusculas)-1)]
+        elif buscar_lista == 1:
+            caracter = letras_minusculas[random.randint(0,len(letras_minusculas)-1)]
+        elif buscar_lista == 2:
+            caracter = numeros[random.randint(0,len(numeros)-1)]
+        else:
+            caracter = caracteres_especiales[random.randint(0,len(caracteres_especiales)-1)]
+        contraseña.append(caracter)
+    contraseña = "".join(contraseña)
     return contraseña
 
 #VALIDACIONES: 12 CARACTERES, 1 NUMERO, 1 CARACTER ESPECIAL, 1 MINUSCULA Y 1 MAYUSCULA
 def validar(contraseña,largo_min = 12,numero = False,caracter_esp = False,letra_min = False,
-            letra_may = False,largo_aceptado = False,contraseña_aceptada = False):
+            letra_may = False,largo_aceptado = False, palabras_autorizadas = True,contraseña_aceptada = False):
     """Validamos que se cumplan todas las condiciones.
         Devuelve True o False dependiendo si la contraseña es válida o no"""
-    palabras_prohibidas = (f"password","admin","contraseña",{user},"claves","clave")
+    palabras_prohibidas = (f"password","admin","contraseña","claves","clave")
+    secuencias_no_recomendadas = ("123","456","789","abc","ABC",)
 
-    for i in contraseña:
-        if i.isupper():
-            mayus += 1
-        elif i.isdigit():
-            dig += 1
-        elif not i.isalnum():
-            esp += 1
+    largo = len(contraseña)
+    cantidad_mayusculas = 0
+    cantidad_minusculas = 0
+    cantidad_numeros = 0
+    cantidad_especiales = 0
 
-    largo = len(clave_original)
+    for palabra in palabras_prohibidas:
+        if palabra in contraseña:
+            palabras_autorizadas = False
 
-    puntaje = 0
-    if largo < 12:
-        puntaje += 2
-    elif largo >= 8:
-        puntaje += 1
-    if mayus > 0:
-        puntaje += 1
-    if dig > 0:
-        puntaje += 1
-    if esp > 0:
-        puntaje += 1
-
-    if puntaje <= 2:
-        nivel = "DEBIL"
-    elif puntaje <= 4:
-        nivel = "INTERMEDIA"
-    else:
-        nivel = "FUERTE"
-    print("tu contraseña tiene un nivel de seguridad : " , nivel )
-
-    if len(contraseña) >= largo_min:
+    if largo >= largo_min:
         largo_aceptado = True
+
     for caracter in contraseña:
         if caracter in numeros:
             numero = True
+            cantidad_numeros += 1
         if caracter in caracteres_especiales:
             caracter_esp = True
+            cantidad_especiales += 1
         if caracter in letras_mayusculas:
             letra_may = True
+            cantidad_mayusculas += 1
         if caracter in letras_minusculas:
             letra_min = True
+            cantidad_minusculas += 1
         
-    if largo_aceptado == True and numero == True and caracter_esp == True and letra_min == True and letra_may == True:
+    if largo_aceptado == True and numero == True and caracter_esp == True and palabras_autorizadas == True and letra_min == True and letra_may == True:
         contraseña_aceptada = True
+        puntaje = largo//2
+        if largo <= 15:
+            puntaje += 0
+        elif largo <= 20:
+            puntaje += 10
+        else:
+            puntaje += 15
+
+        for palabra in secuencias_no_recomendadas:
+            if palabra in contraseña:
+                puntaje -= 7
         
+        if cantidad_mayusculas > 3:
+            puntaje += 2
+        if cantidad_especiales > 3:
+            puntaje += 2
+        if cantidad_numeros > 3:
+            puntaje += 2
+        if cantidad_minusculas > 3:
+            puntaje += 2
+
+        if puntaje <= 12:
+            nivel = "DEBIL"
+        elif puntaje <= 25:
+            nivel = "INTERMEDIA"
+        else:
+            nivel = "FUERTE"
+        print("Tu contraseña tiene un nivel de seguridad: ", nivel )
+
     return contraseña_aceptada
             
 
@@ -162,10 +173,11 @@ def ingresar_contraseña(fila = -1):
             print(" 12 caracteres✅\n Una letra mayúscula✅\n Una letra minúscula✅\n Un número✅\n Un caracter especial.✅\n")
             contraseña = input("Ingrese la contraseña que quiere para esta app: ")
             if validar(contraseña) == True:
+                print("%$%$%")
                 contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
                 if fila == -1:
                     try:
-                        with open(f"{user}.csv", mode = "at", encoding="utf-8") as archivo:
+                        with open(f"claves.csv", mode = "at", encoding="utf-8") as archivo:
                             archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
                     except OSError:
                         print("No se pudo abrir el archivo")
@@ -190,7 +202,10 @@ def ingresar_contraseña(fila = -1):
             else:
                 print("Contraseña no valida.")
         else:
-            contraseña = crear_contraseña()
+            while True:
+                contraseña = crear_contraseña()
+                if validar(contraseña) == True:
+                    break
             contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
             if fila == -1:
                 try:
@@ -353,46 +368,45 @@ def eliminar():
 def mostrar():
     """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
     contador = 1
-    if len(claves)==0:
-        print("\nNo hay cuentas guardadas aún. Vuelve al menu")
-        return
-    else:
-        print("\nEstas son tus cuentas guardadas:")
+    print("\nEstas son tus cuentas guardadas:")
+    try:
+        with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+            for linea in archivo:
+                if linea[0]=="":
+                    print("\nNo hay cuentas guardadas aún. Vuelve al menu")
+                    return
+                linea = linea.strip()
+                linea = linea.split(";")
+                if len(linea) == 4:
+                    app, usuario, contraseña, lista = linea
+                    print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {contraseña}")
+                    contador +=1
+                else:
+                    continue
+                
+    except OSError:
+        print("No se pudo abrir el archivo.")
+    
+    seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
+
+    if seguir==password_admin:
+        contador = 1
         try:
-            with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+            with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
                 for linea in archivo:
                     linea = linea.strip()
                     linea = linea.split(";")
                     if len(linea) == 4:
                         app, usuario, contraseña, lista = linea
-                        print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {contraseña}")
+                        print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(contraseña, enlistar(lista))}")
                         contador +=1
                     else:
                         continue
-                    
         except OSError:
             print("No se pudo abrir el archivo.")
-        
-        seguir=input("\nSi queres ver las contraseñas ingresa la contraseña de administrador\n")
 
-        if seguir==password_admin:
-            contador = 1
-            try:
-                with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
-                    for linea in archivo:
-                        linea = linea.strip()
-                        linea = linea.split(";")
-                        if len(linea) == 4:
-                            app, usuario, contraseña, lista = linea
-                            print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(contraseña, enlistar(lista))}")
-                            contador +=1
-                        else:
-                            continue
-            except OSError:
-                print("No se pudo abrir el archivo.")
-    
-        else:
-            print("Contraseña incorrecta. Acceso denegado")
+    else:
+        print("Contraseña incorrecta. Acceso denegado")
 
 
     
