@@ -1,4 +1,6 @@
 import random
+import os
+import platform
 
 #USUARIO MAESTRO
 user_admin="admin"
@@ -6,13 +8,18 @@ password_admin="1234"
 
 
 #DATOS PRE-SETEADOS
-claves = []
+
 letras_mayusculas = ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','Á','É','Í','Ó','Ú','Ü','Ñ')
 letras_minusculas = ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z','á','é','í','ó','ú','ü','ñ')
 numeros = ('0','1','2','3','4','5','6','7','8','9')
 caracteres_especiales = ('?','!','¡','¿','.',',',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','"',"'",'+','*','=','<','>','|','^','°','~','`')
 
-    
+def limpiar_pantalla():
+    if platform.system() == "Windows":
+        os.system("cls")
+    else:
+        os.system("clear") 
+
 def login():
     """Solicitamos al usuario ingresar usuario y contraseña del administrador"""
 
@@ -20,6 +27,7 @@ def login():
 
     while True:
         user=input("Usuario: ")
+
         password=input("Contraseña: ")
         
         if user== user_admin and password == password_admin:
@@ -84,6 +92,37 @@ def validar(contraseña,largo_min = 12,numero = False,caracter_esp = False,letra
             letra_may = False,largo_aceptado = False,contraseña_aceptada = False):
     """Validamos que se cumplan todas las condiciones.
         Devuelve True o False dependiendo si la contraseña es válida o no"""
+    palabras_prohibidas = (f"password","admin","contraseña",{user},"claves","clave")
+
+    for i in contraseña:
+        if i.isupper():
+            mayus += 1
+        elif i.isdigit():
+            dig += 1
+        elif not i.isalnum():
+            esp += 1
+
+    largo = len(clave_original)
+
+    puntaje = 0
+    if largo < 12:
+        puntaje += 2
+    elif largo >= 8:
+        puntaje += 1
+    if mayus > 0:
+        puntaje += 1
+    if dig > 0:
+        puntaje += 1
+    if esp > 0:
+        puntaje += 1
+
+    if puntaje <= 2:
+        nivel = "DEBIL"
+    elif puntaje <= 4:
+        nivel = "INTERMEDIA"
+    else:
+        nivel = "FUERTE"
+    print("tu contraseña tiene un nivel de seguridad : " , nivel )
 
     if len(contraseña) >= largo_min:
         largo_aceptado = True
@@ -218,10 +257,6 @@ def ingresar_aplicacion(posicion = -1):
         aplicacion = input("Ingrese el nombre de la nueva app: ")
         archivo.write(aplicacion+";")
 
-    claves.append([])
-    claves[posicion].append(aplicacion)
-    
-
 
 def nueva_cuenta():
     """Creamos una nueva cuenta utilizando las funciones creadas anteriormente"""
@@ -248,8 +283,8 @@ def editar():
                 ingresar_contraseña(fila) 
         except ValueError as cabeza:
             print("sos muy gay", cabeza)       
-    
-    
+
+
 def buscar():
     "Busca la aplicación tanto en mayuscula como minuscula"
     print("Estas son las cuentas disponibles:")
