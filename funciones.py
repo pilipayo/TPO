@@ -1,11 +1,24 @@
 import random
 import os
 import platform
+from colorama import Fore, Back, Style, init
+init(autoreset=True)
 
 #USUARIO MAESTRO
 user_admin="admin"
 password_admin="1234"
 
+#COLORES
+def C(texto, fore=Fore.WHITE, back="", style=""):
+    return f"{style}{fore}{back}{texto}{Style.RESET_ALL}"
+
+# Paleta pre-seteada de colores
+OK     = lambda texto: C(texto, Fore.GREEN, style=Style.BRIGHT)
+WARN   = lambda texto: C(texto, Fore.YELLOW, style=Style.BRIGHT)
+ERROR    = lambda texto: C(texto, Fore.RED, style=Style.BRIGHT)
+INFO   = lambda texto: C(texto, Fore.CYAN)
+TITULO  = lambda texto: C(texto, Fore.WHITE, Back.BLUE, Style.BRIGHT)
+INPUT  = lambda texto: C(texto, Fore.MAGENTA, style=Style.BRIGHT)
 
 #DATOS PRE-SETEADOS
 
