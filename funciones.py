@@ -426,7 +426,6 @@ def eliminar():
             with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
                 lineas = archivo.readlines()    
                 lineas.pop(fila-1)
-                print(lineas)
             with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
                 for i in lineas:
                     archivo.write(i)
