@@ -1,12 +1,69 @@
 import random
 import os
 import platform
+from datetime import datetime
 from colorama import Fore, Style, init
 init()
 
-#USUARIO MAESTRO
-"""user_admin="admin"
-password_admin="1234"""
+# ==== Excepciones personalizadas ====
+class UsuarioNoExisteError(Exception):
+    """Se dispara cuando el usuario administrador no existe en el sistema."""
+    pass
+
+class CredencialesInvalidasError(Exception):
+    """Se dispara cuando la contraseña es incorrecta o no se puede validar/desencriptar."""
+    pass
+
+class ArchivoNoAccesibleError(Exception):
+    """Se dispara cuando no se puede leer/escribir un archivo requerido."""
+    pass
+
+class CuentaNoEncontradaError(Exception):
+    """Se dispara cuando la cuenta solicitada no existe o el índice es inválido."""
+    pass
+
+class EntradaInvalidaError(Exception):
+    """Se dispara cuando el usuario ingresa un dato con formato inválido."""
+    pass
+class ContraseñaInvalidaError(Exception):
+    """Se dispara cuando la contraseña no cumple los requisitos mínimos."""
+    pass
+
+
+def log_event(evento, nivel="INFO", mensaje="", usuario="", funcion="", extra="", filename=None):
+    """
+    Registramos eventos en nuestro .csv
+    Columnas: fecha_iso;nivel;evento;usuario;funcion;mensaje;extra
+    """
+    if filename is None:
+        filename = "eventos_log.csv"  
+
+    # Compacta saltos de línea
+    if "\n" in mensaje:
+        mensaje = "".join(mensaje.splitlines())
+    if "\n" in extra:
+        extra = "".join(extra.splitlines())
+
+    fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    linea = f"{fecha};{nivel};{evento};{usuario};{funcion};{mensaje};{extra}\n"
+
+    try:
+        # existe el archivo? si no, escribimos encabezado primero
+        escribir_header = False
+        try:
+            with open(filename, "r", encoding="utf-8") as arch:
+                pass
+        except OSError:
+            escribir_header = True
+
+        with open(filename, "a", encoding="utf-8") as f:
+            if escribir_header:
+                f.write("fecha;gravedad;evento;usuario;funcion;mensaje;extra\n")
+            f.write(linea)
+    except OSError:
+        # nunca cortamos la app por un fallo de log
+        pass
+
 
 #DATOS PRE-SETEADOS
 
@@ -25,11 +82,8 @@ COLORES = {
     "bright": Style.BRIGHT
 }
 
-def limpiar_pantalla():
-    if platform.system() == "Windows":
-        os.system("cls")
-    else:
-        os.system("clear") 
+limpiar_pantalla = lambda: os.system("cls") if platform.system()=="Windows" else os.system("clear")
+
 
 def login():
     """Solicitamos al usuario ingresar usuario y contraseña del administrador"""
@@ -52,10 +106,12 @@ def login():
                     enc, lista = contraseña_archivada.split(";", 1)
                     contraseña_guardada = desencriptar(enc, enlistar(lista))
                 except Exception:
-                    print(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
-                    return None, None
+                    raise CredencialesInvalidasError(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
+                    #print(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
+                    #return None, None
             else:
                 contraseña_guardada= contraseña_archivada
+
             intentos=3
 
             while intentos>0:
@@ -69,35 +125,42 @@ def login():
                     if intentos>0:
                         print(COLORES["error"]+ "✖ Contraseña incorrecta."+ COLORES["reset"])
                     else:
-                        print(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
-                        return None, None
+                        log_event("login_attempts_exceeded", "WARN", "Excediste los 3 intentos.", usuario=user, funcion="login")
+                        raise CredencialesInvalidasError(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
+                        #print(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
+                        #return None, None
         
     except OSError:
-        print(COLORES["alerta"] + f"⚠ El usuario '{user}' no existe." + COLORES["reset"])
 
+        print(COLORES["alerta"] + f"⚠ El usuario '{user}' no existe." + COLORES["reset"])
         respuesta = input("Queres crear un nuevo usuario? (s/n): ").lower()
         
         while respuesta !="s" and respuesta !="n":
             respuesta = input(COLORES["alerta"]+"✖ Respuesta INVALIDA, debe ingresar s o n: "+COLORES["reset"]).lower()
         
         if respuesta == "n":
-            print(COLORES["alerta"] + "⚠ No se creó el usuario. Saliendo del login."+ COLORES["reset"])
-            return None, None
+            raise UsuarioNoExisteError(COLORES["alerta"] + "⚠ No se creó el usuario. Saliendo del login."+ COLORES["reset"])
+            #print(COLORES["alerta"] + "⚠ No se creó el usuario. Saliendo del login."+ COLORES["reset"])
+            #return None, None
 
         print("Creando nueva cuenta...")
         while True:
             nuevaContraseña = input(COLORES["bright"]+ "🔑 Crea tu contraseña: "+ COLORES["reset"])
             
-            if not validar(nuevaContraseña):
-                print(COLORES["alerta"] + "⚠ No cumple con los requisitos. Intenta de nuevo" + COLORES["reset"])
-                continue
-            repetir=input("Repeti la contraseña ingresada: ")
+            #if not validar(nuevaContraseña):
+            try:
+                if validar(nuevaContraseña):        # <---- Puede levantar ContraseñaInvalidaError
+                #print(COLORES["alerta"] + "⚠ No cumple con los requisitos. Intenta de nuevo" + COLORES["reset"])
+                #continue
+                    repetir=input("Repeti la contraseña ingresada: ")
             
-            if nuevaContraseña != repetir:
-                print(COLORES["alerta"] + "⚠ No coinciden las contraseñas. Intenta de nuevo"+ COLORES["reset"])
-                continue
-            break
-                        
+                    if nuevaContraseña != repetir:
+                        print(COLORES["alerta"] + "⚠ No coinciden las contraseñas. Intenta de nuevo"+ COLORES["reset"])
+                        continue
+                    break
+            except ContraseñaInvalidaError as e:
+                print(COLORES["alerta"] + str(e) + COLORES["reset"])
+                continue        
 
         try:
             enc, lista = encriptar(nuevaContraseña)
@@ -109,8 +172,9 @@ def login():
             return user, nuevaContraseña
         
         except OSError:
-            print(COLORES["error"]+"❌ No se pudo crear el archivo"+COLORES["reset"])
-            return None, None
+            raise ArchivoNoAccesibleError(COLORES["error"]+"❌ No se pudo crear el archivo"+COLORES["reset"])
+            #print(COLORES["error"]+"❌ No se pudo crear el archivo"+COLORES["reset"])
+            #return None, None
             
     
 
@@ -128,7 +192,7 @@ def menu():
         elif i == 2:
             opcion =COLORES["info"]+ "📝  Editar cuenta"+ COLORES["reset"]
         elif i == 3:
-            opcion =COLORES["alerta"] + "🗑️  Eliminar cuenta" + COLORES["reset"]
+            opcion =COLORES["alerta"] + "🗑  Eliminar cuenta" + COLORES["reset"]
         else:
             opcion =COLORES["rosa"]+ "👀 Mostrar cuentas"  + COLORES["reset"]
 
@@ -156,77 +220,84 @@ def crear_contraseña(largo_contraseña = 20):
     contraseña = "".join(contraseña)
     return contraseña
 
-#VALIDACIONES: 12 CARACTERES, 1 NUMERO, 1 CARACTER ESPECIAL, 1 MINUSCULA Y 1 MAYUSCULA
-def validar(contraseña,largo_min = 12,numero = False,caracter_esp = False,letra_min = False,
-            letra_may = False,largo_aceptado = False, palabras_autorizadas = True,contraseña_aceptada = False):
-    """Validamos que se cumplan todas las condiciones.
-        Devuelve True o False dependiendo si la contraseña es válida o no"""
-    palabras_prohibidas = (f"password","admin","contraseña","claves","clave")
-    secuencias_no_recomendadas = ("123","456","789","abc","ABC",)
 
+def validar(contraseña, largo_min=12):
+    """
+    Valida que la contraseña cumpla con todos los requisitos mínimos.
+    Si falta alguno, levanta ContraseñaInvalidaError con detalles.
+    Si pasa, calcula y muestra el nivel de robustez: Débil / Intermedia / Fuerte.
+    """
+    # ---- 1. Validaciones básicas ----
+    requisitos_faltantes = []
+
+    if len(contraseña) < largo_min:
+        requisitos_faltantes.append(f"- Tener al menos {largo_min} caracteres.")
+
+    if not any(c in numeros for c in contraseña):
+        requisitos_faltantes.append("- Contener al menos un número (0-9).")
+
+    if not any(c in caracteres_especiales for c in contraseña):
+        requisitos_faltantes.append("- Incluir al menos un caracter especial (%, &, !, etc.).")
+
+    if not any(c in letras_mayusculas for c in contraseña):
+        requisitos_faltantes.append("- Tener al menos una letra mayúscula (A-Z).")
+
+    if not any(c in letras_minusculas for c in contraseña):
+        requisitos_faltantes.append("- Tener al menos una letra minúscula (a-z).")
+
+    palabras_prohibidas = ("password", "admin", "contraseña", "clave", "claves")
+    if any(p.lower() in contraseña.lower() for p in palabras_prohibidas):
+        requisitos_faltantes.append("- No contener palabras prohibidas como 'password', 'admin', 'clave', etc.")
+
+    if requisitos_faltantes:
+        mensaje = "❌ La contraseña no cumple con los siguientes requisitos:\n" + "\n".join(requisitos_faltantes)
+        raise ContraseñaInvalidaError(mensaje)
+
+    # ---- 2. Si pasa todo, calculamos robustez ----
     largo = len(contraseña)
-    cantidad_mayusculas = 0
-    cantidad_minusculas = 0
-    cantidad_numeros = 0
-    cantidad_especiales = 0
+    cantidad_mayusculas = sum(1 for c in contraseña if c in letras_mayusculas)
+    cantidad_minusculas = sum(1 for c in contraseña if c in letras_minusculas)
+    cantidad_numeros = sum(1 for c in contraseña if c in numeros)
+    cantidad_especiales = sum(1 for c in contraseña if c in caracteres_especiales)
 
-    for palabra in palabras_prohibidas:
+    # Puntaje base según largo
+    puntaje = largo // 2
+    if largo <= 15:
+        puntaje += 0
+    elif largo <= 20:
+        puntaje += 10
+    else:
+        puntaje += 15
+
+    # Bonificaciones
+    if cantidad_mayusculas > 3:
+        puntaje += 2
+    if cantidad_minusculas > 3:
+        puntaje += 2
+    if cantidad_numeros > 3:
+        puntaje += 2
+    if cantidad_especiales > 3:
+        puntaje += 2
+
+    # Penalizaciones
+    secuencias_no_recomendadas = ("123", "456", "789", "abc", "ABC")
+    for palabra in secuencias_no_recomendadas:
         if palabra in contraseña:
-            palabras_autorizadas = False
+            puntaje -= 7
 
-    if largo >= largo_min:
-        largo_aceptado = True
+    # Determinamos el nivel
+    if puntaje <= 12:
+        nivel = COLORES["alerta"] + "⚠ DÉBIL" + COLORES["reset"]
+    elif puntaje <= 25:
+        nivel = COLORES["info"] + "INTERMEDIA" + COLORES["reset"]
+    else:
+        nivel = COLORES["ok"] + "FUERTE" + COLORES["reset"]
 
-    for caracter in contraseña:
-        if caracter in numeros:
-            numero = True
-            cantidad_numeros += 1
-        if caracter in caracteres_especiales:
-            caracter_esp = True
-            cantidad_especiales += 1
-        if caracter in letras_mayusculas:
-            letra_may = True
-            cantidad_mayusculas += 1
-        if caracter in letras_minusculas:
-            letra_min = True
-            cantidad_minusculas += 1
-        
-    if largo_aceptado == True and numero == True and caracter_esp == True and palabras_autorizadas == True and letra_min == True and letra_may == True:
-        contraseña_aceptada = True
-        puntaje = largo//2
-        if largo <= 15:
-            puntaje += 0
-        elif largo <= 20:
-            puntaje += 10
-        else:
-            puntaje += 15
-
-        for palabra in secuencias_no_recomendadas:
-            if palabra in contraseña:
-                puntaje -= 7
-        
-        if cantidad_mayusculas > 3:
-            puntaje += 2
-        if cantidad_especiales > 3:
-            puntaje += 2
-        if cantidad_numeros > 3:
-            puntaje += 2
-        if cantidad_minusculas > 3:
-            puntaje += 2
-
-        if puntaje <= 12:
-            nivel = COLORES["alerta"]+"⚠ DEBIL"+COLORES["reset"]
-        elif puntaje <= 25:
-            nivel = COLORES["info"]+"INTERMEDIA" +COLORES["reset"]
-        else:
-            nivel = COLORES["ok"]+ "FUERTE" +COLORES["reset"]
-        print("Tu contraseña tiene un nivel de seguridad: ", nivel )
-
-    return contraseña_aceptada
-            
+    print(f"Tu contraseña tiene un nivel de seguridad: {nivel}")
+    return True
 
 
-def ingresar_contraseña(fila = -1):
+def ingresar_contraseña(user, fila = -1):
     """Le pedimos al usuario que ingrese su contraseña o que cree una contraseña aleatoria más segura"""
     while True:
         while True:
@@ -244,116 +315,141 @@ def ingresar_contraseña(fila = -1):
             print("Va ingresar su propia contraseña. Tenga en cuenta que la misma debe tener como mínimo:")
             print(" 12 caracteres✅\n Una letra mayúscula✅\n Una letra minúscula✅\n Un número✅\n Un caracter especial.✅\n")
             contraseña = input("Ingrese la contraseña que quiere para esta app: ")
-            if validar(contraseña) == True:
-                print("%$%$%")
-                contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
+            
+            #if validar(contraseña) == True:
+            try:
+                if validar(contraseña):       # <--- Levanta ContraseñaInvalidaError
+                    contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
                 if fila == -1:
                     try:
-                        with open(f"claves.csv", mode = "at", encoding="utf-8") as archivo:
+                        with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                             archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
                     except OSError:
-                        print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                        raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                        #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
                 else:
                     try:
-                        with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                        with open(f"{user}claves.csv", mode = "rt", encoding="utf-8") as archivo:
                             lineas = archivo.readlines()
                             linea_a_editar = lineas[fila-1]
-                            linea_a_editar.strip()
+                            linea_a_editar = linea_a_editar.strip()
                             app, usuario, contraseña, lista = linea_a_editar.split(";")
                             lineas.pop(fila-1)
-                        with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                        with open(f"{user}claves.csv", mode = "wt", encoding="utf-8") as archivo:
                             for i in lineas:
                                 archivo.write(i)
 
-                        with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                        with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                             archivo.write(app+";"+usuario+";"+contraseña_encriptada+";"+lista_encriptacion+"\n")
                             
                     except OSError:
-                        print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+                        raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
                 break
-            else:
-                print("❌ Contraseña no valida.")
-        else:
+
+            except ContraseñaInvalidaError as msg:
+                print(COLORES["alerta"] + str(msg) + COLORES["reset"])
+                continue        #VUELVE A PEDIR
+                #print("❌ Contraseña no valida.")
+
+        else:   # eleccion == 2
             while True:
                 contraseña = crear_contraseña()
-                if validar(contraseña) == True:
-                    break
+                #if validar(contraseña) == True:
+                try:
+                    if validar(contraseña):
+                        break
+                except ContraseñaInvalidaError:
+                    continue
+
             contraseña_encriptada, lista_encriptacion = encriptar(contraseña)
             if fila == -1:
                 try:
-                    with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                    with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                         archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
                 except OSError:
-                    print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                    raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                    #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
             else:
                 try:
-                    with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+                    with open(f"{user}claves.csv", mode = "rt", encoding="utf-8") as archivo:
                         lineas = archivo.readlines()
                         linea_a_editar = lineas[fila-1]
-                        linea_a_editar.strip()
+                        linea_a_editar = linea_a_editar.strip()
                         app, usuario, contraseña, lista = linea_a_editar.split(";")
                         lineas.pop(fila-1)
-                    with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+                    with open(f"{user}claves.csv", mode = "wt", encoding="utf-8") as archivo:
                         for i in lineas:
                             archivo.write(i)
 
-                    with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+                    with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                         archivo.write(app+";"+usuario+";"+contraseña_encriptada+";"+lista_encriptacion+"\n")
                         
                 except OSError:
-                    print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                    raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                    #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
             break
 
 
-def ingresar_usuario(fila = -1):
+def ingresar_usuario(user, fila = -1):
     """Permite al usuario ingresar su nombre de usuario"""
     if fila == -1:
         try:
-            with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+            with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                 usuario = input("➤ Ingrese el nombre de su usuario en la app: ")
                 archivo.write(usuario+";")
         except OSError:
-            print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
 
     else:  
         try:
-            with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
+            with open(f"{user}claves.csv", mode = "rt", encoding="utf-8") as archivo:
                 lineas = archivo.readlines()
                 linea_a_editar = lineas[fila-1]
-                linea_a_editar.strip()
+                linea_a_editar = linea_a_editar.strip()
                 app, usuario, contraseña, lista = linea_a_editar.split(";")
                 usuario = input("➤ Ingrese el nombre de su usuario en la app: ")
                 lineas.pop(fila-1)
                 print(lineas)
-            with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
+            with open(f"{user}claves.csv", mode = "wt", encoding="utf-8") as archivo:
                 for i in lineas:
                     archivo.write(i)
 
-            with open("claves.csv", mode = "at", encoding="utf-8") as archivo:
+            with open(f"{user}claves.csv", mode = "at", encoding="utf-8") as archivo:
                 archivo.write(app+";"+usuario+";"+contraseña+";"+lista+"\n")
                 
         except OSError:
-            print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
 
 
 
 
-def ingresar_aplicacion(posicion = -1):
+def ingresar_aplicacion(user):
     """Permite al usuario ingresar el nombre de la aplicación"""
-    with open("claves.csv", mode = "at") as archivo:
-        aplicacion = input("\n➤ Ingrese el nombre de la nueva app: ")
-        archivo.write(aplicacion+";")
+    with open(f"{user}claves.csv", mode = "at") as archivo:
+        aplicacion = input("\n➤ Ingrese el nombre de la nueva app o '-1' si quiere salir: ")
+        if aplicacion == "-1":
+            return -1
+        else:
+            archivo.write(aplicacion+";")
 
 
-def nueva_cuenta():
+
+def nueva_cuenta(user):
     """Creamos una nueva cuenta utilizando las funciones creadas anteriormente"""
-    ingresar_aplicacion()
-    ingresar_usuario()
-    ingresar_contraseña()
+    if ingresar_aplicacion(user) == -1:
+        return
+    ingresar_usuario(user)
+    ingresar_contraseña(user)
     
-def editar():
+def editar(user):
     """Editamos el usuario o contraseña ya guardados"""
-    fila = buscar()
+    fila = buscar(user)
+
+    if fila is None:
+        return
     if fila == -1:
         print(COLORES["alerta"]+"La cuenta que desea editar no existe."+COLORES["reset"])
     else:
@@ -372,13 +468,13 @@ def editar():
             print("Error", error2)       
 
 
-def buscar():
+def buscar(user):
     "Busca la aplicación tanto en mayuscula como minuscula"
     print("Estas son las cuentas disponibles:")
     contador = 1
     encontrado = True
     try:
-        with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
+        with open(f"{user}claves.csv", mode="r", encoding = "utf-8") as archivo:
             for linea in archivo:
                 linea = linea.strip()
                 linea = linea.split(";")
@@ -389,59 +485,81 @@ def buscar():
                 else:
                     continue
     except OSError:
-        print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        raise ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
 
     while True:
         try:
-            cuenta_a_buscar = int(input("➤ Ingrese el numero de la app que desea editar o borrar: "))
+            cuenta_a_buscar = int(input("➤ Ingrese el numero de la app que desea editar o borrar o '-1' si desea salir: "))
+
+            if cuenta_a_buscar == -1:
+                return
 
             while cuenta_a_buscar < 1:
                 cuenta_a_buscar = int(input(COLORES["alerta"]+"Ingrese un numero valido (mayor o igual a '1'): "+COLORES["reset"]))
 
-            with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+            with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
                 cantidad_registros = sum(1 for i in archivo)
             
             if cuenta_a_buscar > cantidad_registros:
-                print("❌ Numero inválido")
-                encontrado = False
+                raise CuentaNoEncontradaError("❌ Número inválido. No existe esa cuenta.")
+            
+                '''print("❌ Numero inválido")
+                encontrado = False'''
             break
         
         
         except ValueError:
-            print(COLORES["error"]+"Debe ingresar un numero."+COLORES["reset"])
+            raise EntradaInvalidaError(COLORES["error"]+"Debe ingresar un numero."+COLORES["reset"])
+            #print(COLORES["error"]+"Debe ingresar un numero."+COLORES["reset"])
         except OSError:
-            print(COLORES["alerta"]+"⚠ Archivo no encontrado"+ COLORES["reset"])
+            raise ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ Archivo no encontrado"+ COLORES["reset"])
+            #print(COLORES["alerta"]+"⚠ Archivo no encontrado"+ COLORES["reset"])
     
-    return cuenta_a_buscar if encontrado == True else -1
+    return cuenta_a_buscar #if encontrado == True else -1 --- Sale por excepciones
     
     
     
-def eliminar():
+def eliminar(user):
     "Eliminamos la cuenta buscada"
-    fila = buscar()
-    if fila == -1:
-        print(COLORES["error"]+"La cuenta que desea eliminar no existe."+COLORES["reset"])
-    else:
-        try:
-            with open("claves.csv", mode = "rt", encoding="utf-8") as archivo:
-                lineas = archivo.readlines()    
-                lineas.pop(fila-1)
-            with open("claves.csv", mode = "wt", encoding="utf-8") as archivo:
-                for i in lineas:
-                    archivo.write(i)
-                
-        except OSError:
-            print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+    fila = buscar(user)
 
-        print("🗑️ ✔ La cuenta fue eliminada.")
-  
+    if fila is None:
+        return
+    '''if fila == -1:
+        print(COLORES["error"]+"La cuenta que desea eliminar no existe."+COLORES["reset"])''' #---- BUSCAR SE ENCARGA DE VALIDAR
 
-def mostrar():
+    try:
+        with open(f"{user}claves.csv", mode = "rt", encoding="utf-8") as archivo:
+            lineas = archivo.readlines()
+            # ------ PARA EL LOG, capturamos detalle de cuenta a eliminar:
+            detalle = ""
+            try:
+                partes = lineas[fila-1].strip().split(";")   # si tu código usa fila-1, mantenelo así
+                if len(partes) == 4:
+                    app, usuario_cuenta, _contraseña, _lista = partes
+                    detalle = "app=" + app + ";usuario_cuenta=" + usuario_cuenta
+            except Exception:
+                detalle = ""
+                    
+            lineas.pop(fila-1)
+        with open(f"{user}claves.csv", mode = "wt", encoding="utf-8") as archivo:
+            for i in lineas:
+                archivo.write(i)
+            
+    except OSError:
+        raise ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+
+    print("🗑 ✔ La cuenta fue eliminada.")
+
+
+def mostrar(user):
     """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
     contador = 1
     print("\nEstas son tus cuentas guardadas:")
     try:
-        with open("claves.csv", mode="r", encoding="utf-8") as archivo:
+        with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
             for linea in archivo:
                 if linea[0]=="":
                     print("\nNo hay cuentas guardadas aún. Vuelve al menu")
@@ -456,7 +574,8 @@ def mostrar():
                     continue
                 
     except OSError:
-        print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+        raise ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
     
     usuario_admin = input("\nSi queres ver las contraseñas ingresa el usuario administrador: ").strip()
     archivo_usuario = f"{usuario_admin}.csv"
@@ -465,16 +584,18 @@ def mostrar():
         with open(archivo_usuario, mode="rt", encoding="utf-8") as f:
             contraseña = f.readline().strip()
     except OSError:
-        print(COLORES["alerta"]+"Usuario administrador no encontrado."+COLORES["reset"])
-        return
+        raise UsuarioNoExisteError(COLORES["alerta"]+"Usuario administrador no encontrado."+COLORES["reset"])
+        #print(COLORES["alerta"]+"Usuario administrador no encontrado."+COLORES["reset"])
+        #return
     
     if ";" in contraseña:
         try:
             enc, lista = contraseña.split(";", 1)
             contraseña_guardada = desencriptar(enc, enlistar(lista))
         except Exception:
-            print(COLORES["error"]+"No se pudo desencriptar la contraseña del usuario administrador."+COLORES["reset"])
-            return
+            raise CredencialesInvalidasError(COLORES["error"]+"No se pudo desencriptar la contraseña del usuario administrador."+COLORES["reset"])
+            #print(COLORES["error"]+"No se pudo desencriptar la contraseña del usuario administrador."+COLORES["reset"])
+            #return
     else:
         contraseña_guardada = contraseña
     
@@ -483,7 +604,7 @@ def mostrar():
     if seguir==contraseña_guardada:
         contador = 1
         try:
-            with open("claves.csv", mode="r", encoding = "utf-8") as archivo:
+            with open(f"{user}claves.csv", mode="r", encoding = "utf-8") as archivo:
                 for linea in archivo:
                     linea = linea.strip()
                     linea = linea.split(";")
@@ -494,10 +615,13 @@ def mostrar():
                     else:
                         continue
         except OSError:
-            print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+            raise ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+            #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
 
     else:
-        print("❌ Contraseña incorrecta. Acceso denegado")
+        log_event("admin_password_incorrect", "WARN", "Intento de ver contraseñas con admin incorrecto.", usuario=usuario_admin, funcion="mostrar")
+        raise CredencialesInvalidasError("❌ Contraseña incorrecta. Acceso denegado")
+        #print("❌ Contraseña incorrecta. Acceso denegado")
 
 
     
@@ -590,9 +714,4 @@ def desencriptar(clave_encriptada, lista_encriptacion):
     clave_original = "".join(clave_original)
     return clave_original
 
-
-def enlistar(cadena):
-    lista = cadena.split("|")   
-    lista = [int(x) for x in lista if x != ""]
-
-    return lista
+enlistar = lambda cadena: [int(x) for x in cadena.split("|") if x!=""]
