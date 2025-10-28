@@ -461,9 +461,9 @@ def editar(user):
                 respuesta = int(input("Respuesta: "))
 
             if respuesta == 1:
-                ingresar_usuario(fila)
+                ingresar_usuario(user, fila)
             else:
-                ingresar_contraseña(fila) 
+                ingresar_contraseña(user, fila) 
         except ValueError as error2:
             print("Error", error2)       
 
