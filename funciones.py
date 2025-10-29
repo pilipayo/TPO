@@ -427,7 +427,8 @@ def editar(user):
     if fila is None:
         return
     if fila == -1:
-        print(COLORES["alerta"]+"La cuenta que desea editar no existe."+COLORES["reset"])
+        """print(COLORES["alerta"]+"La cuenta que desea editar no existe."+COLORES["reset"])"""
+        return
     else:
         try:
             print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
@@ -448,8 +449,22 @@ def buscar(user):
     "Busca la aplicación tanto en mayuscula como minuscula"
     contador = 1
     encontrado = True
+
     try:
         with open(f"{user}claves.csv", mode="r", encoding = "utf-8") as archivo:
+            
+            primera=archivo.readline()
+            
+            if primera == "" or primera.strip() == "":
+                print(COLORES["alerta"] + "⚠ No tenés cuentas guardadas todavía." + COLORES["reset"])
+                return None
+            
+            primera_linea = primera.strip().split(";")
+            if len(primera_linea) == 4:
+                app, usuario, contraseña, lista = primera_linea
+                print(f"{contador}. App:{app}| Usuario: {usuario}")
+                contador += 1
+
             for linea in archivo:
                 linea = linea.strip()
                 linea = linea.split(";")
@@ -460,15 +475,15 @@ def buscar(user):
                 else:
                     continue
     except OSError:
-        raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        print(COLORES["alerta"] + "⚠ No tenés cuentas guardadas todavía." + COLORES["reset"])
+        return None
 
     while True:
         try:
             cuenta_a_buscar = int(input("➤ Ingrese el numero de la app que desea editar o borrar o '-1' si desea salir: "))
 
             if cuenta_a_buscar == -1:
-                return
+                return -1
 
             while cuenta_a_buscar < 1:
                 cuenta_a_buscar = int(input(COLORES["alerta"]+"Ingrese un numero valido (mayor o igual a '1'): "+COLORES["reset"]))
@@ -532,12 +547,26 @@ def eliminar(user):
 def mostrar(user):
     """Mostramos todas las contraseñas, primero ocultas y cuando ingrese la contraseña maestra se muestran completas."""
     contador = 1
-    print("\nEstas son tus cuentas guardadas:")
+
     try:
         with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
+            primera=archivo.readline()
+            if primera == "" or primera.strip() == "":
+                print(COLORES["alerta"] + "⚠ No tenés cuentas guardadas todavía." + COLORES["reset"])
+                return
+            
+            print("\nEstas son tus cuentas guardadas:")
+
+            primera_linea = primera.strip().split(";")
+            if len(primera_linea) == 4:
+                app, usuario, contraseña, lista = primera_linea
+                print(f"{contador}. App:{app}| Usuario: {usuario}")
+                contador += 1
+
+
             for linea in archivo:
                 if linea[0]=="":
-                    print("\nNo hay cuentas guardadas aún. Vuelve al menu")
+                    print(COLORES["alerta"] + "⚠ No tenés cuentas guardadas todavía." + COLORES["reset"])
                     return
                 linea = linea.strip()
                 linea = linea.split(";")
@@ -549,10 +578,13 @@ def mostrar(user):
                     continue
                 
     except OSError:
-        raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No tenés cuentas guardadas todavía"+ COLORES["reset"])
         #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
     
-    usuario_admin = input("\nSi queres ver las contraseñas ingresa el usuario administrador: ").strip()
+    usuario_admin = input("\nSi queres ver las contraseñas ingresa el usuario administrador o -1 si queres salir: ").strip()
+    if usuario_admin == "-1":
+        return
+    
     archivo_usuario = f"{usuario_admin}.csv"
 
     try:
