@@ -1,23 +1,24 @@
 import funciones
+import excepciones
 
 
 def main():
     try:
         user, contraseña_guardada = funciones.login()
         funciones.log_event("login_ok", "INFO", "Ingreso correcto.", usuario=user, funcion="login")        
-    except funciones.ContraseñaInvalidaError as e:
+    except excepciones.ContraseñaInvalidaError as e:
         funciones.log_event("weak_pw", "ADV", str(e), usuario="", funcion="login")
         print(funciones.COLORES["alerta"], str(e), funciones.COLORES["reset"])
         return
-    except funciones.UsuarioNoExisteError as e:
+    except excepciones.UsuarioNoExisteError as e:
         funciones.log_event("login_user_not_found", "WARN", str(e), usuario="", funcion="login")
         print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
         return
-    except funciones.CredencialesInvalidasError as e:
+    except excepciones.CredencialesInvalidasError as e:
         funciones.log_event("login_attempts", "WARN", str(e), usuario="", funcion="login")
         print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
         return
-    except funciones.ArchivoNoAccesibleError as e:
+    except excepciones.ArchivoNoAccesibleError as e:
         funciones.log_event("io_error", "ERROR", str(e), usuario="", funcion="login")
         print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
         return
@@ -53,22 +54,22 @@ def main():
             else:
                 print(funciones.COLORES["error"] +"❌ Opción invalida"+funciones.COLORES["reset"])
 
-        except funciones.ContraseñaInvalidaError as e:
+        except excepciones.ContraseñaInvalidaError as e:
             funciones.log_event("weak_password", "WARN", str(e), usuario=user, funcion="menu")
             print(funciones.COLORES["alerta"], str(e), funciones.COLORES["reset"])
-        except funciones.CuentaNoEncontradaError as e:
+        except excepciones.CuentaNoEncontradaError as e:
             funciones.log_event("account_not_found", "WARN", str(e), usuario=user, funcion="menu")
             print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
-        except funciones.EntradaInvalidaError as e:
+        except excepciones.EntradaInvalidaError as e:
             funciones.log_event("invalid_input", "WARN", str(e), usuario=user, funcion="menu")
             print(funciones.COLORES["alerta"], str(e), funciones.COLORES["reset"])
-        except funciones.CredencialesInvalidasError as e:
+        except excepciones.CredencialesInvalidasError as e:
             funciones.log_event("admin_password_incorrect", "WARN", str(e), usuario=user, funcion="mostrar")
             print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
-        except funciones.UsuarioNoExisteError as e:
+        except excepciones.UsuarioNoExisteError as e:
             funciones.log_event("login_user_not_found", "WARN", str(e), usuario=user, funcion="mostrar")
             print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
-        except funciones.ArchivoNoAccesibleError as e:
+        except excepciones.ArchivoNoAccesibleError as e:
             funciones.log_event("io_error", "ERROR", str(e), usuario=user, funcion="*")
             print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
         except Exception as e:
