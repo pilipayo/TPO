@@ -387,7 +387,6 @@ def ingresar_usuario(user, fila = -1):
                 app, usuario, contraseña, lista = linea_a_editar.split(";")
                 usuario = input("➤ Ingrese el nombre de su usuario en la app: ")
                 lineas.pop(fila-1)
-                print(lineas)
             with open(f"{user}claves.csv", mode = "wt", encoding="utf-8") as archivo:
                 for i in lineas:
                     archivo.write(i)
