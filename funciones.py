@@ -79,8 +79,8 @@ def login():
 
             if ";" in contraseña_archivada:
                 try:
-                    enc, lista = contraseña_archivada.split(";", 1)
-                    contraseña_guardada = desencriptar(enc, enlistar(lista))
+                    encriptada, lista = contraseña_archivada.split(";", 1)
+                    contraseña_guardada = desencriptar(encriptada, enlistar(lista))
                 except Exception:
                     raise excepciones.CredencialesInvalidasError(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
                     #print(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
@@ -89,22 +89,30 @@ def login():
                 contraseña_guardada= contraseña_archivada
 
             intentos=3
+            linea = archivo.readline().strip().split(";")
+            usuario_guardado_encriptado, lista_usuario_guardado = linea
+            usuario_guardado = desencriptar(usuario_guardado_encriptado, enlistar(lista_usuario_guardado))
 
             while intentos>0:
                 contraseña_ingresada = input(COLORES["bright"]+"🔐 Contraseña: "+COLORES["reset"])
             
                 if contraseña_ingresada == contraseña_guardada:
-                    print(COLORES["bright"]+f"\nBienvenido, {user}!"+COLORES["reset"])
-                    return user, contraseña_guardada
+                    if user == usuario_guardado:
+                        print(COLORES["bright"]+f"\nBienvenido, {user}!"+COLORES["reset"])
+                        return user, contraseña_guardada
+                    else:
+                        raise excepciones.ArchivoModificado(COLORES["error"]+ "El archivo está siendo accedido por un usuario no permitido."+ COLORES["reset"])
+
+
                 else:
                     intentos-=1
                     if intentos>0:
                         print(COLORES["error"]+ "✖ Contraseña incorrecta."+ COLORES["reset"])
-                    else:
-                        log_event("login_attempts_exceeded", "WARN", "Excediste los 3 intentos.", usuario=user, funcion="login")
-                        raise excepciones.CredencialesInvalidasError(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
-                        #print(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
-                        #return None, None
+            else:
+                log_event("login_attempts_exceeded", "WARN", "Excediste los 3 intentos.", usuario=user, funcion="login")
+                raise excepciones.CredencialesInvalidasError(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
+                #print(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
+                #return None, None
         
     except OSError:
 
@@ -139,10 +147,13 @@ def login():
                 continue        
 
         try:
-            enc, lista = encriptar(nuevaContraseña)
+            encriptada, lista = encriptar(nuevaContraseña)
+            user_encriptado, lista_user = encriptar(user)
 
             with open(archivo_usuario, mode = "wt", encoding="utf-8") as archivo:
-                archivo.write(f"{enc};{lista}\n")
+                archivo.write(f"{encriptada};{lista}\n")
+            with open(archivo_usuario, mode = "at", encoding="utf-8") as archivo:
+                archivo.write(f"{user_encriptado};{lista_user}")
             print(COLORES["ok"]+"✅ Cuenta creada exitosamente!"+ COLORES["reset"])
             print(COLORES["bright"]+f"\nBienvenido, {user}!"+COLORES["reset"])
             return user, nuevaContraseña

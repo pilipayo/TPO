@@ -21,3 +21,7 @@ class EntradaInvalidaError(Exception):
 class ContraseñaInvalidaError(Exception):
     """Se dispara cuando la contraseña no cumple los requisitos mínimos."""
     pass
+class ArchivoModificado(Exception):
+    """Se dispara cuando el archivo está siendo abierto por otro usuario."""
+    pass
+

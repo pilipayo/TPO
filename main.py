@@ -22,6 +22,10 @@ def main():
         funciones.log_event("io_error", "ERROR", str(e), usuario="", funcion="login")
         print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
         return
+    except excepciones.ArchivoModificado as e:
+        funciones.log_event("io_error", "WARN", str(e), usuario="", funcion="login")
+        print(funciones.COLORES["error"], str(e), funciones.COLORES["reset"])
+        return
         
         #Entramos correctamente en la app.
 
