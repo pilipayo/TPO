@@ -659,27 +659,6 @@ def mostrar(user):
             
             print("\nEstas son tus cuentas guardadas:")
 
-            """
-            primera_linea = primera.strip().split(";")
-            if len(primera_linea) == 4:
-                app, usuario, contraseña, lista = primera_linea
-                print(f"{contador}. App:{app}| Usuario: {usuario}")
-                contador += 1
-            
-
-
-            for linea in archivo:
-                if linea[0]=="":
-                    print(COLORES["alerta"] + "⚠ No tenés cuentas guardadas todavía." + COLORES["reset"])
-                    return
-                linea = linea.strip().split(";")
-                if len(linea) == 4:
-                    app, usuario, contraseña, lista = linea
-                    print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {contraseña}")
-                    contador +=1
-                else:
-                    continue
-            """
         with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
             salir = False
             while True:
@@ -695,7 +674,6 @@ def mostrar(user):
                     app, usuario, contraseña, lista = linea
                     print(f"{contador}. App:{app}| Usuario: {usuario}")
                     contador +=1
-                print("banana")
                 if salir == True:
                     break
 
