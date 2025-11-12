@@ -44,6 +44,7 @@ def main():
             elif accion == 2:
                 funciones.limpiar_pantalla()
                 funciones.editar(user)
+                funciones.log_event("account_edited", "INFO", "Cuenta editada.", usuario=user, funcion="editar")
             elif accion == 3:
                 funciones.limpiar_pantalla()
                 funciones.eliminar(user)
