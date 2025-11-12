@@ -1,0 +1,3 @@
+fecha;gravedad;evento;usuario;funcion;mensaje;extra
+2025-10-31 18:19:17;INFO;login_ok;admin;login;Ingreso correcto.;
+2025-10-31 18:19:50;WARN;io_error;;login;[31mEl archivo está siendo accedido por un usuario no permitido.[0m;
