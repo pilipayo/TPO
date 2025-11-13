@@ -1,4 +1,5 @@
 """Utilidades de la app: login, gestión de cuentas, encriptación y (des)encriptación."""
+
 import random
 import os
 import platform
@@ -29,17 +30,17 @@ Notas:
     Cualquier OSError se ignora a propósito: un fallo de log nunca corta la app.
 """
     if filename is None:
-        filename = "eventos_log.csv"  
+        filename = "eventos_log.csv"    # Si no se pasa filename, se usa el CSV por defecto.
 
-    # Compacta saltos de línea
+    # Compacta saltos de línea para no romper csv.
     if "\n" in mensaje:
         mensaje = "".join(mensaje.splitlines())
     if "\n" in extra:
         extra = "".join(extra.splitlines())
 
+    # Armo timestamp legible (YYYY-mm-dd HH:MM:SS) para los logs.
     fecha = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    linea = f"{fecha};{nivel};{evento};{usuario};{funcion};{mensaje};{extra}\n"
-
+    linea = f"{fecha};{nivel};{evento};{usuario};{funcion};{mensaje};{extra}\n"    
     try:
         # existe el archivo? si no, escribimos encabezado primero
         escribir_header = False
@@ -50,8 +51,9 @@ Notas:
             escribir_header = True
 
         with open(filename, "a", encoding="utf-8") as f:
-            if escribir_header:
-                f.write("fecha;gravedad;evento;usuario;funcion;mensaje;extra\n")
+            # Primera vez: escribo encabezado "fecha;gravedad;evento;usuario;funcion;mensaje;extra".
+            if escribir_header: 
+                f.write("fecha;gravedad;evento;usuario;funcion;mensaje;extra\n")   
             f.write(linea)
     except OSError:
         # nunca cortamos la app por un fallo de log
@@ -65,6 +67,8 @@ letras_minusculas = ('a','b','c','d','e','f','g','h','i','j','k','l','m','n','o'
 numeros = ('0','1','2','3','4','5','6','7','8','9')
 caracteres_especiales = ('?','!','¡','¿','.',',',':','-','_','(',')','[',']','{','}','@','#','$','%','&','/','"',"'",'+','*','=','<','>','|','^','°','~','`')
 
+# --- Paleta de colores para mensajes de la CLI (colorama) ---
+# Se usan claves semánticas (ok, error, alerta, etc.) para no mezclar colores "a mano".
 COLORES = {
     "ok": Fore.GREEN,       
     "error": Fore.RED,      
@@ -75,6 +79,8 @@ COLORES = {
     "bright": Style.BRIGHT
 }
 
+# --- Limpiar pantalla según SO ---
+# En Windows se usa 'cls'; en Linux/Mac 'clear'.
 limpiar_pantalla = lambda: os.system("cls") if platform.system()=="Windows" else os.system("clear")
 
 
@@ -108,36 +114,43 @@ Side effects:
 
     print(COLORES["bright"] + "\n══════════════ LOGIN ══════════════" + COLORES["reset"])
 
-    while True:
+    # Bucle hasta obtener un nombre de usuario no vacío.
+    while True:                                         
         user=input(COLORES["bright"] + "👤 Usuario: "+ COLORES["reset"]).strip()
         if user:
             break
         print(COLORES["alerta"]+"⚠ Debe ingresar un nombre de usuario."+ COLORES["reset"])
+        
+    # Archivo de credenciales del admin para este usuario (una credencial por archivo).
     archivo_usuario = f"{user}.csv"
         
     try:
         with open(archivo_usuario, mode="rt", encoding="utf-8") as archivo:
+            # Primera línea: contraseña del admin (puede estar en plano o "encriptada propia").
             contraseña_archivada= archivo.readline().strip()
-
+            
+            # Caso "encriptada propia": separo 'clave_encriptada;cadena_encriptacion' y reconstruyo en limpio.
             if ";" in contraseña_archivada:
                 try:
                     encriptada, lista = contraseña_archivada.split(";", 1)
                     contraseña_guardada = desencriptar(encriptada, enlistar(lista))
                 except Exception:
                     raise excepciones.CredencialesInvalidasError(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
-                    #print(COLORES["error"]+"✖ Error al desencriptar la contraseña guardada."+ COLORES["reset"])
-                    #return None, None
+                    
             else:
                 contraseña_guardada= contraseña_archivada
-
+                
+            # Hasta 3 intentos de password antes de bloquear (seguridad básica).
             intentos=3
+            # Segunda línea del archivo del admin: su nombre de usuario, también encriptado + cadena.
             linea = archivo.readline().strip().split(";")
             usuario_guardado_encriptado, lista_usuario_guardado = linea
             usuario_guardado = desencriptar(usuario_guardado_encriptado, enlistar(lista_usuario_guardado))
 
             while intentos>0:
                 contraseña_ingresada = input(COLORES["bright"]+"🔐 Contraseña: "+COLORES["reset"])
-            
+                
+                # Si la contraseña coincide, además valido que el archivo pertenezca al mismo 'user' ingresado.
                 if contraseña_ingresada == contraseña_guardada:
                     if user == usuario_guardado:
                         print(COLORES["bright"]+f"\nBienvenido, {user}!"+COLORES["reset"])
@@ -147,15 +160,16 @@ Side effects:
 
 
                 else:
+                    # Falla un intento: decremento contador e informo si aún quedan intentos.
                     intentos-=1
                     if intentos>0:
                         print(COLORES["error"]+ "✖ Contraseña incorrecta."+ COLORES["reset"])
             else:
+                # Registro en log el bloqueo por intentos agotados (trazabilidad).
                 log_event("login_attempts_exceeded", "WARN", "Excediste los 3 intentos.", usuario=user, funcion="login")
                 raise excepciones.CredencialesInvalidasError(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
-                #print(COLORES["error"]+ "Excediste los 3 intentos."+ COLORES["reset"])
-                #return None, None
-        
+     
+    # El archivo no existe: ofrezco crear nuevo admin.   
     except OSError:
 
         print(COLORES["alerta"] + f"⚠ El usuario '{user}' no existe." + COLORES["reset"])
@@ -166,18 +180,14 @@ Side effects:
         
         if respuesta == "n":
             raise excepciones.UsuarioNoExisteError(COLORES["alerta"] + "⚠ No se creó el usuario. Saliendo del login."+ COLORES["reset"])
-            #print(COLORES["alerta"] + "⚠ No se creó el usuario. Saliendo del login."+ COLORES["reset"])
-            #return None, None
 
         print("Creando nueva cuenta...")
         while True:
             nuevaContraseña = input(COLORES["bright"]+ "🔑 Crea tu contraseña: "+ COLORES["reset"])
             
-            #if not validar(nuevaContraseña):
             try:
-                if validar(nuevaContraseña):        # <---- Puede levantar ContraseñaInvalidaError
-                #print(COLORES["alerta"] + "⚠ No cumple con los requisitos. Intenta de nuevo" + COLORES["reset"])
-                #continue
+                # Validación de requisitos (puede lanzar ContraseñaInvalidaError) y confirmación por duplicado.
+                if validar(nuevaContraseña):        
                     repetir=input("Repeti la contraseña ingresada: ")
             
                     if nuevaContraseña != repetir:
@@ -189,7 +199,9 @@ Side effects:
                 continue        
 
         try:
+            # Almaceno contraseña del admin "encriptada propia" + cadena de deltas para poder revertirla.
             encriptada, lista = encriptar(nuevaContraseña)
+            # También guardo el nombre de usuario admin encriptado para validar que el archivo no sea "prestado".
             user_encriptado, lista_user = encriptar(user)
 
             with open(archivo_usuario, mode = "wt", encoding="utf-8") as archivo:
@@ -217,7 +229,8 @@ Returns:
 
     print(COLORES["bright"] + "\n══════════════ MENÚ PRINCIPAL ══════════════" + COLORES["reset"])
     print("\nElija una de las siguientes opciones")
-
+    
+    # Render del menú (0..4) con colores/emojis; sólo imprime, no lee la opción.
     for i in range (5):
         if i == 0:
             opcion = COLORES["error"]+ "🏃🚪  Salir" + COLORES["reset"]
@@ -251,6 +264,8 @@ Notas:
 """
 
     contraseña=[]
+    
+    # Construcción carácter a carácter eligiendo aleatoriamente una de las 4 tablas.
     for i in range(largo_contraseña):
         buscar_lista = random.randint(0,3)
         if buscar_lista == 0:
@@ -262,6 +277,8 @@ Notas:
         else:
             caracter = caracteres_especiales[random.randint(0,len(caracteres_especiales)-1)]
         contraseña.append(caracter)
+        
+    # Convierto la lista de caracteres en string final.
     contraseña = "".join(contraseña)
     return contraseña
 
@@ -285,6 +302,7 @@ Notas:
     - Imprime el nivel de seguridad con colores.
 """
     # ---- 1. Validaciones básicas ----
+    # 1) Junto todos los requisitos incumplidos; si hay alguno, lanzo excepción con el detalle.
     requisitos_faltantes = []
 
     if len(contraseña) < largo_min:
@@ -318,6 +336,7 @@ Notas:
     cantidad_especiales = sum(1 for c in contraseña if c in caracteres_especiales)
 
     # Puntaje base según largo
+    # 3) Cálculo de puntaje: base por longitud + bonificaciones/penalizaciones simples.
     puntaje = largo // 2
     if largo <= 15:
         puntaje += 0
@@ -326,7 +345,7 @@ Notas:
     else:
         puntaje += 15
 
-    # Bonificaciones
+    # Bonificaciones por variedad (más de 3 de cada clase de caracteres).
     if cantidad_mayusculas > 3:
         puntaje += 2
     if cantidad_minusculas > 3:
@@ -338,11 +357,13 @@ Notas:
 
     # Penalizaciones
     secuencias_no_recomendadas = ("123", "456", "789", "abc", "ABC")
+    # Penalizo secuencias triviales (e.g., '123', 'abc').
     for palabra in secuencias_no_recomendadas:
         if palabra in contraseña:
             puntaje -= 7
 
     # Determinamos el nivel
+    # Clasificación de nivel según puntaje y feedback visual.
     if puntaje <= 12:
         nivel = COLORES["alerta"] + "⚠ DÉBIL" + COLORES["reset"]
     elif puntaje <= 25:
@@ -443,18 +464,18 @@ Efectos:
                             
                     except OSError:
                         raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-                        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+                        
                 break
 
             except excepciones.ContraseñaInvalidaError as msg:
                 print(COLORES["alerta"] + str(msg) + COLORES["reset"])
                 continue        #VUELVE A PEDIR
-                #print("❌ Contraseña no valida.")
+                
 
         else:   # eleccion == 2
             while True:
                 contraseña = crear_contraseña()
-                #if validar(contraseña) == True:
+                
                 try:
                     if validar(contraseña):
                         break
@@ -468,7 +489,7 @@ Efectos:
                         archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
                 except OSError:
                     raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-                    #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                
             else:
                 try:
                     with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
@@ -508,7 +529,7 @@ Efectos:
                         
                 except OSError:
                     raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-                    #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+                    
             break
 
 
@@ -534,7 +555,7 @@ Raises:
                 archivo.write(usuario+";")
         except OSError:
             raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-            #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            
 
     else:
         try:
@@ -581,7 +602,7 @@ Raises:
                 
         except OSError:
             raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-            #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+            
 
 
 
@@ -747,10 +768,10 @@ Raises:
         
         except ValueError:
             raise excepciones.EntradaInvalidaError(COLORES["error"]+"Debe ingresar un numero."+COLORES["reset"])
-            #print(COLORES["error"]+"Debe ingresar un numero."+COLORES["reset"])
+            
         except OSError:
             raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ Archivo no encontrado"+ COLORES["reset"])
-            #print(COLORES["alerta"]+"⚠ Archivo no encontrado"+ COLORES["reset"])
+            
     
     return cuenta_a_buscar #if encontrado == True else -1 --- Sale por excepciones
     
@@ -818,7 +839,7 @@ Raises:
             
     except OSError:
         raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
-        #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+        
 
     print("🗑 ✔ La cuenta fue eliminada.")
 
@@ -879,7 +900,7 @@ Raises:
                 
     except OSError:
         raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No tenés cuentas guardadas todavía"+ COLORES["reset"])
-        #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
+    
     
     usuario_admin = input("\nSi queres ver las contraseñas ingresa el usuario administrador o -1 si queres salir: ").strip()
     if usuario_admin == "-1":
@@ -899,8 +920,7 @@ Raises:
             contraseña_guardada = desencriptar(encriptada, enlistar(lista))
         except Exception:
             raise excepciones.CredencialesInvalidasError(COLORES["error"]+"No se pudo desencriptar la contraseña del usuario administrador."+COLORES["reset"])
-            #print(COLORES["error"]+"No se pudo desencriptar la contraseña del usuario administrador."+COLORES["reset"])
-            #return
+            
     else:
         contraseña_guardada = contraseña
     
@@ -929,12 +949,12 @@ Raises:
             
         except OSError:
             raise excepciones.ArchivoNoAccesibleError(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
-            #print(COLORES["alerta"]+"⚠ No se pudo abrir el archivo"+ COLORES["reset"])
+            
 
     else:
         log_event("admin_password_incorrect", "WARN", "Intento de ver contraseñas con admin incorrecto.", usuario=usuario_admin, funcion="mostrar")
         raise excepciones.CredencialesInvalidasError("❌ Contraseña incorrecta. Acceso denegado")
-        #print("❌ Contraseña incorrecta. Acceso denegado")
+        
 
     
 def encriptar(clave_original):
