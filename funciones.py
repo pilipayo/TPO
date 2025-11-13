@@ -725,7 +725,6 @@ def mostrar(user):
                         app, usuario, contraseña, lista = linea
                         print(f"{contador}. App:{app}| Usuario: {usuario} | Contraseña: {desencriptar(contraseña, enlistar(lista))}")
                         contador +=1
-                    print("banana")
                     if salir == True:
                         break
             
