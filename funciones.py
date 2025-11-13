@@ -309,7 +309,6 @@ def ingresar_contraseña(user, fila = -1):
                             archivo.write(contraseña_encriptada+";"+lista_encriptacion+"\n")
                     except OSError:
                         raise excepciones.ArchivoNoAccesibleError(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
-                        #print(COLORES["error"]+"No se pudo abrir el archivo"+COLORES["reset"])
                 else:
                     try:
                         with open(f"{user}claves.csv", mode="r", encoding="utf-8") as archivo:
@@ -353,7 +352,7 @@ def ingresar_contraseña(user, fila = -1):
 
             except excepciones.ContraseñaInvalidaError as msg:
                 print(COLORES["alerta"] + str(msg) + COLORES["reset"])
-                continue        #VUELVE A PEDIR
+                continue      #VUELVE A PEDIR
 
         else:   # eleccion == 2
             while True:
@@ -504,7 +503,7 @@ def editar(user):
             print("Ingrese '1' si quiere editar el usuario o '2' si quiere editar la contraseña.")
             respuesta = int(input("Respuesta: "))
             while respuesta != 1 and respuesta != 2:
-                print("❌ Ingreso invalido. Responda nuevamente.")
+                print(COLORES["alerta"]+"❌ Ingreso invalido. Responda nuevamente."+COLORES["reset"])
                 respuesta = int(input("Respuesta: "))
 
             if respuesta == 1:

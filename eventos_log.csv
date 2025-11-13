@@ -109,3 +109,4 @@ fecha;gravedad;evento;usuario;funcion;mensaje;extra
 2025-11-12 23:58:17;WARN;admin_password_incorrect;pepe;mostrar;Intento de ver contraseñas con admin incorrecto.;
 2025-11-12 23:58:17;WARN;admin_password_incorrect;pepe;mostrar;[31m❌ Contraseña incorrecta. Acceso denegado[0m;
 2025-11-13 00:01:48;INFO;account_added;pepe;nueva_cuenta;Cuenta agregada.;
+2025-11-13 00:06:33;WARN;account_not_found;pepe;menu;❌ Número inválido. No existe esa cuenta.;
